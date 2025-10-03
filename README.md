@@ -2,7 +2,7 @@
 
 **CapFit** is a modern fitness and activity tracking app built using **Kotlin** and powered by **Firebase**. The app encourages users to stay active through gamified experiences while tracking walking, cycling, and other physical activities.
 
-Whether you're taking your first steps toward a healthier lifestyle or you're already an active enthusiast, **FitTrack** makes your fitness journey more fun, engaging, and trackable.
+Whether you're taking your first steps toward a healthier lifestyle or you're already an active enthusiast, **CapFit** makes your fitness journey more fun, engaging, and trackable.
 
 ---
 
