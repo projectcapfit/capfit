@@ -1,0 +1,42 @@
+// ---- Season Data ----
+data class SeasonData(
+    val userId: String = "",
+    val seasonId: String = "",
+    val seasonName: String = "",
+
+    // Season performance
+    val distanceCoveredInThisSeason: Int = 0,
+    val areaCoveredInThisSeason: Int = 0,
+    val seasonScore: Int = 0,
+    val seasonRank: Int = -1
+)
+
+
+// ---- User Game Data ----
+data class UserGameData(
+    val userId: String = "",
+    val userName: String = "",
+
+    // Game progress
+    val highestDistance: Int = 0,
+    val highestArea: Int = 0,
+    val highestScore: Int = 0,
+
+    // Current season stats
+    val currentSeason: SeasonData = SeasonData(),
+
+    // Previous seasons (list)
+    val playedSeasons: List<SeasonData> = emptyList(),
+
+    // Achievements (list of Ints)
+    val achievements: List<Int> = emptyList(),
+
+    // Current tracking points
+    val currentTrackingPoints: TrackData? = null
+)
+
+
+// ---- Track Data (placeholder) ----
+data class TrackData(
+    val dummyValue: Int = 0
+)

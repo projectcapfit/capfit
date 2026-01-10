@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "468862631377",
+    "project_id": "capfit-635ff",
+    "storage_bucket": "capfit-635ff.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:468862631377:android:627a2f0b19e9b319de74f0",
+        "android_client_info": {
+          "package_name": "com.jntuh.capfit"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "468862631377-32jjnhhf9atv8o46pepp4ahnmh1kbfur.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jntuh.capfit",
+            "certificate_hash": "089096075f07887e2829030181589723c428028c"
+          }
+        },
+        {
+          "client_id": "468862631377-bgsh20v2le2ldgflea4tlq5bs9llc5so.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCsZjWBlIB0GFOIlqdknpr1P2ftugrQ7y8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "468862631377-bgsh20v2le2ldgflea4tlq5bs9llc5so.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

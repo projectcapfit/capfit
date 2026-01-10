@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="my_white">#FCFCFC</color>
+    <color name="light_black">#191919</color>
+    <color name="light_grey">#E63A4750</color>
+    <color name="ic_launcher_background">#0c2139</color>
+    <color name="light_green">#B0C929</color>
+    <color name="ash">#40696969</color>
+    <color name="achievements_light_green">#C9F7C5</color>
+    <color name="achievements_dark_green">#A7E6A3</color>
+    <color name="achievements_light_gray">#F2F5F8</color>
+    <color name="achievements_dark_gray">#E5EAEF</color>
+    <color name="achievements_text_dark_green">#278C4A</color>
+</resources>

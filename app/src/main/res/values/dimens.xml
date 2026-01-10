@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="text_heading_h1">24sp</dimen>
+    <dimen name="text_heading_h2">20sp</dimen>
+    <dimen name="text_body_large">18sp</dimen>
+    <dimen name="text_body_regular">16sp</dimen>
+
+    <dimen name="margin_standard">16dp</dimen>
+    <dimen name="padding_large">20dp</dimen>
+    <dimen name="drawer_width">280dp</dimen>
+    <dimen name="profile_icon_size">48dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
+</resources>
