@@ -1,0 +1,54 @@
+Light Green Button
+
+            <com.google.android.material.button.MaterialButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="LOGIN"
+                android:textColor="@android:color/white"
+                android:textSize="22sp"
+                app:cornerRadius="5dp"
+                app:backgroundTint="@color/light_green"
+                app:layout_constraintTop_toBottomOf="@+id/textView4"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="30dp" />
+
+
+Edit Text
+
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/emailInputLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                app:endIconMode="custom"
+                app:endIconDrawable="@drawable/ic_check"
+                app:endIconVisible="false"
+                app:boxBackgroundMode="none"
+                app:layout_constraintTop_toBottomOf="@id/textView2"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edit_text_email"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="18sp"
+                    android:inputType="textEmailAddress"
+                    android:background="@drawable/round_edit_text_box"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+
+
+
+agp = "8.12.3"
+kotlin = "2.2.20"
+coreKtx = "1.17.0"
+junit = "4.13.2"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
+appcompat = "1.7.1"
+material = "1.13.0"
+activity = "1.11.0"
+constraintlayout = "2.2.1"

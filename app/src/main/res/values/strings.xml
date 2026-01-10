@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">CapFit</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="intro_chessy_line_1">Get ready to be fit</string>
+    <string name="default_web_client_id">468862631377-bgsh20v2le2ldgflea4tlq5bs9llc5so.apps.googleusercontent.com</string>
+</resources>

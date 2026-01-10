@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.jntuh.capfit">
+
+    <application
+        android:name=".MyApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.CapFit">
+        <activity
+            android:name=".ui.home.HomePage"
+            android:exported="false" />
+        <activity
+            android:name=".ui.authentication.ForgotPassword"
+            android:exported="false" />
+
+
+        <activity
+            android:name=".ui.authentication.SignUp"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="capfit"
+                    android:host="verify" />
+            </intent-filter>
+        </activity>
+
+
+        <activity
+            android:name=".ui.authentication.Login"
+            android:exported="false" />
+        <activity
+            android:name=".ui.introduction.Introduction4"
+            android:exported="false" />
+        <activity
+            android:name=".ui.introduction.Introduction3"
+            android:exported="false" />
+        <activity
+            android:name=".ui.introduction.Introduction2"
+            android:exported="false" />
+        <activity
+            android:name=".ui.introduction.Introduction1"
+            android:exported="false" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

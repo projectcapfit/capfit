@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="my_white">#FCFCFC</color>
+    <color name="light_black">#191919</color>
+    <color name="gold">#EBC866</color>
+    <color name="orange">#FF9B80</color>
+    <color name="light_grey">#E63A4750</color>
+    <color name="ic_launcher_background">#0c2139</color>
+    <color name="dark_white">#F5F5F5</color>
+    <color name="light_green">#B0C929</color>
+</resources>
