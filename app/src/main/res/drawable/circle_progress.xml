@@ -1,28 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Background Circle (grey) -->
     <item android:id="@android:id/background">
-        <shape android:shape="oval">
-            <stroke
-                android:width="10dp"
-                android:color="#E0E0E0"/>
+        <shape android:shape="rectangle">
+            <corners android:radius="20dp"/>
+            <solid android:color="#DADADA"/>
         </shape>
     </item>
 
-    <!-- Progress Arc -->
     <item android:id="@android:id/progress">
-        <rotate
-            android:fromDegrees="270"
-            android:toDegrees="270"
-            android:pivotX="50%"
-            android:pivotY="50%">
-            <shape android:shape="oval">
-                <stroke
-                    android:width="10dp"
-                    android:color="#96C11F"/>
+        <clip>
+            <shape android:shape="rectangle">
+                <corners android:radius="20dp"/>
+                <solid android:color="#96C11F"/>
             </shape>
-        </rotate>
+        </clip>
     </item>
 
 </layer-list>

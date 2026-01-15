@@ -44,7 +44,6 @@ class UserGameDataViewModel @Inject constructor(
             _loading.value = false
         }
     }
-
     fun updateUserGameData(updated: UserGameData) {
         viewModelScope.launch {
             _loading.value = true
@@ -61,7 +60,6 @@ class UserGameDataViewModel @Inject constructor(
             _loading.value = false
         }
     }
-
     fun addFriend(friendUid: String) {
         viewModelScope.launch {
             _loading.value = true

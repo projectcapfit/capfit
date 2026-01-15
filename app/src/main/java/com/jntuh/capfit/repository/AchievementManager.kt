@@ -1,30 +1,48 @@
 package com.jntuh.capfit.repository
 
 import com.jntuh.capfit.data.Achievement
-import com.jntuh.capfit.room.AchievementProvider
-import com.jntuh.capfit.data.UserGameData
+import com.jntuh.capfit.data.AchievementCategory
+import com.jntuh.capfit.data.AchievementsConfig
 
 class AchievementManager {
 
-    fun all(): List<Achievement> = AchievementProvider.achievements
-
-    fun getUnlocked(user: UserGameData): List<Achievement> {
-        return all().filter { user.achievements.contains(it.id) }
+    fun getAllAchievements(): List<Achievement> {
+        return AchievementsConfig.achievements
     }
 
-    fun getLocked(user: UserGameData): List<Achievement> {
-        return all().filter { !user.achievements.contains(it.id) }
+    fun updateAchievementProgress(
+        baseList: List<Achievement>,
+        distance: Int,
+        area: Int,
+        score: Int,
+        streak: Int
+    ): List<Achievement> {
+
+        return baseList.map { a ->
+            val progress = when (a.category) {
+                AchievementCategory.DISTANCE -> distance
+                AchievementCategory.AREA -> area
+                AchievementCategory.SCORE -> score
+                AchievementCategory.STREAK -> streak
+            }
+
+            a.copy(
+                currentProgress = progress,
+                isUnlocked = progress >= a.threshold
+            )
+        }
     }
 
-    fun getProgressPercent(user: UserGameData): Int {
-        val total = all().size
-        val unlocked = getUnlocked(user).size
-        return if (total == 0) 0 else (unlocked * 100 / total)
+    fun getNewlyUnlockedAchievements(
+        old: List<Achievement>,
+        updated: List<Achievement>
+    ): List<Achievement> {
+        return updated.filter { u ->
+            u.isUnlocked && (old.find { it.id == u.id }?.isUnlocked == false)
+        }
     }
 
-    fun getProgressText(user: UserGameData): String {
-        val total = all().size
-        val unlocked = getUnlocked(user).size
-        return "$unlocked of $total unlocked"
+    fun getUnlockedIds(list: List<Achievement>): List<Int> {
+        return list.filter { it.isUnlocked }.map { it.id }
     }
 }

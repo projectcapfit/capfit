@@ -5,7 +5,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
-import com.jntuh.capfit.data.*
+import com.jntuh.capfit.data.User
+import com.jntuh.capfit.data.UserGameData
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,80 +19,151 @@ class UserGameDataManager @Inject constructor(
 
     private var cachedUserGameData: UserGameData? = null
 
-    private fun getUserDocRef() =
-        db.collection("userGameData").document(firebaseAuth.currentUser!!.uid)
+    suspend fun getUserGameData(): UserGameData {
+        val uid = firebaseAuth.currentUser?.uid ?: return UserGameData()
+        cachedUserGameData?.let { return it }
 
-    suspend fun getUserGameData(): UserGameData? {
-        val user = firebaseAuth.currentUser ?: return null
-        Log.d("GameDataManager", "CurrentUser = ${firebaseAuth.currentUser}")
+        return try {
+            val doc = db.collection("userGameData")
+                .document(uid)
+                .get()
+                .await()
 
-        if (cachedUserGameData == null) {
-            try {
-                val docRef = getUserDocRef()
-                val snapshot = docRef.get().await()
+            val data = doc.toObject(UserGameData::class.java) ?: UserGameData(uid = uid)
+            cachedUserGameData = data
+            data
 
-                cachedUserGameData = if (snapshot.exists()) {
-                    snapshot.toObject(UserGameData::class.java)
-                } else {
-                    // Create new document for user
-                    val newData = UserGameData(
-                        uid = user.uid,
-                        userName = user.displayName ?: "Unknown"
-                    )
-                    docRef.set(newData).await()
-                    newData
-                }
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-                cachedUserGameData = null
-            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            UserGameData(uid = uid)
         }
+    }
+    suspend fun updateUserGameData(updatedData: UserGameData): Boolean {
+        val uid = firebaseAuth.currentUser?.uid ?: return false
 
-        return cachedUserGameData
+        return try {
+            db.collection("userGameData")
+                .document(uid)
+                .set(updatedData, SetOptions.merge())
+                .await()
+
+            cachedUserGameData = updatedData
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
     }
 
-    suspend fun updateUserGameData(updated: UserGameData): Boolean {
-        return try {
-            getUserDocRef().set(updated).await()
+
+    suspend fun updateUserAchievements(ids: List<Int>) {
+        val uid = firebaseAuth.currentUser?.uid ?: return
+        val userData = getUserGameData()
+        val updated = userData.copy(achievements = ids)
+
+        try {
+            db.collection("userGameData")
+                .document(uid)
+                .set(mapOf("achievements" to ids), SetOptions.merge())
+                .await()
+
             cachedUserGameData = updated
-            true
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
-    }
-
-    suspend fun updateAchievementProgress(id: Int, value: Int): Boolean {
-        return try {
-            val fieldPath = "achievementProgress.$id"
-
-            getUserDocRef().update(fieldPath, value).await()
-
-            val currentProgress =
-                cachedUserGameData?.achievementProgress?.toMutableMap() ?: mutableMapOf()
-            currentProgress[id] = value
-
-            cachedUserGameData =
-                cachedUserGameData?.copy(achievementProgress = currentProgress)
-
-            true
 
         } catch (e: Exception) {
             e.printStackTrace()
-            false
         }
     }
 
+    suspend fun updateDistance(distance: Int) {
+        val uid = firebaseAuth.currentUser?.uid ?: return
+        val userData = getUserGameData()
+
+        val updated = userData.copy(highestDistanceCovered = distance)
+
+        try {
+            db.collection("userGameData")
+                .document(uid)
+                .set(mapOf("highestDistanceCovered" to distance), SetOptions.merge())
+                .await()
+
+            cachedUserGameData = updated
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    suspend fun updateArea(area: Int) {
+        val uid = firebaseAuth.currentUser?.uid ?: return
+        val userData = getUserGameData()
+
+        val updated = userData.copy(highestAreaCovered = area)
+
+        try {
+            db.collection("userGameData")
+                .document(uid)
+                .set(mapOf("highestAreaCovered" to area), SetOptions.merge())
+                .await()
+
+            cachedUserGameData = updated
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    suspend fun updateScore(score: Int) {
+        val uid = firebaseAuth.currentUser?.uid ?: return
+        val userData = getUserGameData()
+
+        val updated = userData.copy(highestScore = score)
+
+        try {
+            db.collection("userGameData")
+                .document(uid)
+                .set(mapOf("highestScore" to score), SetOptions.merge())
+                .await()
+
+            cachedUserGameData = updated
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    suspend fun updateStreak(streak: Int) {
+        val uid = firebaseAuth.currentUser?.uid ?: return
+        val userData = getUserGameData()
+
+        val updated = userData.copy(currentStreak = streak)
+
+        try {
+            db.collection("userGameData")
+                .document(uid)
+                .set(mapOf("currentStreak" to streak), SetOptions.merge())
+                .await()
+
+            cachedUserGameData = updated
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
     suspend fun addFriend(friendUid: String): Boolean {
-        return try {
-            getUserDocRef().set(
-                mapOf("friendsList" to FieldValue.arrayUnion(friendUid)),
-                SetOptions.merge()
-            ).await()
+        val uid = firebaseAuth.currentUser?.uid ?: return false
+        val userData = getUserGameData()
 
-            cachedUserGameData?.friendsList =
-                cachedUserGameData?.friendsList?.plus(friendUid) ?: listOf(friendUid)
+        if (userData.friendsList.contains(friendUid)) return true
+
+        return try {
+            db.collection("userGameData")
+                .document(uid)
+                .update("friendsList", FieldValue.arrayUnion(friendUid))
+                .await()
+
+            cachedUserGameData = userData.copy(
+                friendsList = userData.friendsList + friendUid
+            )
 
             true
         } catch (e: Exception) {
@@ -101,15 +173,20 @@ class UserGameDataManager @Inject constructor(
     }
 
     suspend fun removeFriend(friendUid: String): Boolean {
-        return try {
-            getUserDocRef().set(
-                mapOf("friendsList" to FieldValue.arrayRemove(friendUid)),
-                SetOptions.merge()
-            ).await()
+        val uid = firebaseAuth.currentUser?.uid ?: return false
+        val userData = getUserGameData()
 
-            cachedUserGameData?.friendsList =
-                cachedUserGameData?.friendsList?.filterNot { it == friendUid }
-                    ?: emptyList()
+        if (!userData.friendsList.contains(friendUid)) return true
+
+        return try {
+            db.collection("userGameData")
+                .document(uid)
+                .update("friendsList", FieldValue.arrayRemove(friendUid))
+                .await()
+
+            cachedUserGameData = userData.copy(
+                friendsList = userData.friendsList - friendUid
+            )
 
             true
         } catch (e: Exception) {
@@ -118,25 +195,44 @@ class UserGameDataManager @Inject constructor(
         }
     }
 
+
+    suspend fun getFriendsList(): List<String> {
+        return getUserGameData().friendsList
+    }
+
+    suspend fun updateFriendsList(list: List<String>) {
+        val uid = firebaseAuth.currentUser?.uid ?: return
+        val userData = getUserGameData()
+        val updated = userData.copy(friendsList = list)
+
+        try {
+            db.collection("userGameData")
+                .document(uid)
+                .update("friendsList", list)
+                .await()
+
+            cachedUserGameData = updated
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     suspend fun searchUsersByName(query: String): List<UserGameData> {
         return try {
-            if (query.isBlank()) return emptyList()
-
-            val end = query + "~"
-
             db.collection("userGameData")
                 .whereGreaterThanOrEqualTo("userName", query)
-                .whereLessThanOrEqualTo("userName", end)
-                .limit(15)
+                .whereLessThanOrEqualTo("userName", query + "\uf8ff")
                 .get()
                 .await()
                 .toObjects(UserGameData::class.java)
-
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
         }
     }
+
+
 
     fun clearCache() {
         cachedUserGameData = null

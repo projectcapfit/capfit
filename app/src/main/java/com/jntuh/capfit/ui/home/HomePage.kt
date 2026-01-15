@@ -11,6 +11,7 @@ import androidx.core.graphics.toColorInt
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.jntuh.capfit.R
 import com.jntuh.capfit.data.Achievement
 import com.jntuh.capfit.databinding.ActivityHomeChildBinding
@@ -18,6 +19,7 @@ import com.jntuh.capfit.ui.Account.MyAccount
 import com.jntuh.capfit.ui.AchievementsActivity
 import com.jntuh.capfit.ui.authentication.Login
 import com.jntuh.capfit.ui.BaseActivity
+import com.jntuh.capfit.ui.notification.Notification
 import com.jntuh.capfit.viewmodel.SeasonViewModel
 import com.jntuh.capfit.viewmodel.UserGameDataViewModel
 import com.jntuh.capfit.viewmodel.UserViewModel
@@ -29,7 +31,7 @@ import kotlin.math.absoluteValue
 class HomePage : BaseActivity() {
 
     private lateinit var binding: ActivityHomeChildBinding
-
+    @Inject lateinit var firestore: FirebaseFirestore
     @Inject lateinit var auth: FirebaseAuth
     @Inject lateinit var sharedPreferences: SharedPreferences
 
@@ -71,10 +73,15 @@ class HomePage : BaseActivity() {
             startActivity(Intent(this , AchievementsActivity::class.java))
         }
 
+        binding.imgNotification.setOnClickListener {
+            startActivity(Intent(this, Notification::class.java))
+        }
+
         setupGreeting()
         observeUserProfile()
         observeUserGameData()
         observeSeasonData()
+        listenUnreadNotifications()
     }
 
     private fun observeUserProfile() {
@@ -150,5 +157,23 @@ class HomePage : BaseActivity() {
             else -> "Time to sleep"
         }
         binding.greetings.text = "Hello, $msg"
+    }
+
+    private fun listenUnreadNotifications() {
+        val uid = auth.currentUser?.uid ?: return
+
+        firestore.collection("users")
+            .document(uid)
+            .collection("notifications")
+            .whereEqualTo("isRead", false)
+            .addSnapshotListener { snap, error ->
+
+                if (error != null || snap == null) return@addSnapshotListener
+
+                val hasUnread = snap.size() > 0
+
+                binding.badgeDot.visibility =
+                    if (hasUnread) View.VISIBLE else View.GONE
+            }
     }
 }

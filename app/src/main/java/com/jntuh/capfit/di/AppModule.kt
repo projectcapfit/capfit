@@ -2,6 +2,8 @@ package com.jntuh.capfit.di
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.jntuh.capfit.repository.AchievementManager
+import com.jntuh.capfit.repository.UserGameDataManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,6 +24,12 @@ object AppModule {
     fun provideSharedPreferencesEditor(sharedPreferences: SharedPreferences) =
         sharedPreferences.edit()
 
+
+    @Provides
+    @Singleton
+    fun provideAchievementManager(): AchievementManager {
+        return AchievementManager()
+    }
 
 }
 

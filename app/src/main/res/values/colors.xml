@@ -12,4 +12,24 @@
     <color name="achievements_light_gray">#F2F5F8</color>
     <color name="achievements_dark_gray">#E5EAEF</color>
     <color name="achievements_text_dark_green">#278C4A</color>
+
+
+    <color name="green">#4CAF50</color>
+    <color name="white">#FFFFFF</color>
+
+    <color name="ach_primary">#A7E6A3</color>
+    <color name="ach_primary_light">#C9F7C5</color>
+
+    <color name="ach_bg_light">#F6F8F6</color>
+    <color name="ach_bg_dark">#141F13</color>
+
+    <color name="ach_text_title_light">#1A1A1A</color>
+    <color name="ach_text_title_dark">#F6F6F6</color>
+
+    <color name="ach_text_sub_light">#6C6C6C</color>
+    <color name="ach_text_sub_dark">#B6B6B6</color>
+
+    <color name="ach_locked_bg_light">#E0E0E0</color>
+    <color name="ach_locked_bg_dark">#2E2E2E</color>
+
 </resources>

@@ -57,6 +57,29 @@
                 android:background="@drawable/profile_circle_bg"/>
         </FrameLayout>
 
+        <FrameLayout
+            android:id="@+id/imgNotification"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            app:layout_constraintEnd_toEndOf="@id/rectangle_6"
+            app:layout_constraintTop_toTopOf="@id/profile_frame"
+            app:layout_constraintBottom_toBottomOf="@id/profile_frame"
+            android:layout_marginEnd="16dp">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_notification_bell" />
+
+            <View
+                android:id="@+id/badgeDot"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:background="@drawable/badge_red"
+                android:layout_gravity="end|top"
+                android:visibility="gone"/>
+        </FrameLayout>
+
         <TextView
             android:id="@+id/greetings"
             android:layout_width="wrap_content"
