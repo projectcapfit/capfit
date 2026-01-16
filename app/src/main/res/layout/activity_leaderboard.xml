@@ -10,7 +10,6 @@
         android:background="@color/my_white"
         tools:context=".ui.home.Leaderboard">
 
-        <!-- Back Button -->
         <ImageButton
             android:id="@+id/backBtn"
             android:layout_width="32dp"
@@ -22,7 +21,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Title -->
         <TextView
             android:id="@+id/titleLeaderboard"
             android:layout_width="0dp"
@@ -87,7 +85,6 @@
 
         </LinearLayout>
 
-        <!-- Your Rank Card -->
         <LinearLayout
             android:id="@+id/yourRankCard"
             android:layout_width="0dp"

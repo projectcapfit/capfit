@@ -20,6 +20,7 @@ import com.jntuh.capfit.ui.AchievementsActivity
 import com.jntuh.capfit.ui.authentication.Login
 import com.jntuh.capfit.ui.BaseActivity
 import com.jntuh.capfit.ui.notification.Notification
+import com.jntuh.capfit.ui.profile.ProfileActivity
 import com.jntuh.capfit.viewmodel.SeasonViewModel
 import com.jntuh.capfit.viewmodel.UserGameDataViewModel
 import com.jntuh.capfit.viewmodel.UserViewModel
@@ -45,7 +46,7 @@ class HomePage : BaseActivity() {
 
         setChildLayout(R.layout.activity_home_child)
         window.statusBarColor = android.graphics.Color.TRANSPARENT
-                window.decorView.systemUiVisibility =
+        window.decorView.systemUiVisibility =
             View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
 
         binding = ActivityHomeChildBinding.bind(baseBinding.childContainer.getChildAt(0))
@@ -59,6 +60,10 @@ class HomePage : BaseActivity() {
 
         baseBinding.myAccount.setOnClickListener {
             startActivity(Intent(this, MyAccount::class.java))
+        }
+
+        baseBinding.gotoProfile.setOnClickListener {
+            startActivity(Intent(this, ProfileActivity::class.java))
         }
 
         baseBinding.goToDashboard.setOnClickListener {

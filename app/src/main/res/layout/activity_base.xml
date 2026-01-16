@@ -91,6 +91,26 @@
                     </LinearLayout>
 
                     <LinearLayout
+                        android:id="@+id/gotoProfile"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="12dp">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_account"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:text="Profile"
+                            android:textSize="16sp"/>
+                    </LinearLayout>
+
+                    <LinearLayout
                         android:id="@+id/goToDashboard"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -129,7 +149,6 @@
                             android:text="Leaderboard"
                             android:textSize="16sp"/>
                     </LinearLayout>
-
 
                     <LinearLayout
                         android:id="@+id/goToAchievements"
