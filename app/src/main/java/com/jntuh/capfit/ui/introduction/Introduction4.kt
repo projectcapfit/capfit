@@ -17,6 +17,7 @@ class Introduction4 : AppCompatActivity() {
 
         binding.next.setOnClickListener {
             startActivity(Intent(this, Login::class.java))
+            finish()
         }
     }
 }

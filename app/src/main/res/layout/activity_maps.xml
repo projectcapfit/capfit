@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <fragment
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:id="@+id/btn_back"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_margin="20dp"
+        android:layout_gravity="top|start"
+        android:background="@drawable/circle_white"
+        android:gravity="center"
+        android:elevation="6dp"
+        android:clickable="true"
+        android:focusable="true">
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_back"
+            android:contentDescription="Back" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/pill_status"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="20dp"
+        android:background="@drawable/pill_white"
+        android:gravity="center_vertical"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:orientation="horizontal"
+        android:elevation="6dp">
+        <View
+            android:id="@+id/status_dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:background="@drawable/circle_green"
+            android:layout_marginEnd="6dp" />
+        <TextView
+            android:id="@+id/tv_status_pill"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="GPS Active"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#52525b" />
+    </LinearLayout>
+
+    <!-- FAB sits above the stats sheet when visible, or at bottom center when hidden -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btn_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="32dp"
+        android:src="@drawable/ic_play"
+        android:contentDescription="Start"
+        android:elevation="16dp"
+        app:backgroundTint="#B0CF3B"
+        app:fabSize="normal"
+        app:rippleColor="#8faa1e" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btn_stop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="32dp"
+        android:src="@drawable/ic_stop"
+        android:contentDescription="Stop"
+        android:visibility="gone"
+        android:elevation="16dp"
+        app:backgroundTint="#ef4444"
+        app:fabSize="normal"
+        app:rippleColor="#b91c1c" />
+
+    <LinearLayout
+        android:id="@+id/stats_sheet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@drawable/stats_sheet_bg"
+        android:orientation="vertical"
+        android:paddingTop="24dp"
+        android:paddingBottom="36dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:elevation="12dp"
+        android:visibility="gone"
+        android:translationY="400dp">
+
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
+            android:background="#e4e4e7" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Capture Zone"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#1c1c1e"
+            android:gravity="center"
+            android:layout_marginBottom="16dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="3">
+
+            <LinearLayout
+                android:id="@+id/card_distance"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/stat_card_bg"
+                android:orientation="vertical"
+                android:padding="16dp">
+                <LinearLayout
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/icon_bg_green"
+                    android:gravity="center"
+                    android:layout_marginBottom="12dp">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_footprints"
+                        android:contentDescription="Distance" />
+                </LinearLayout>
+                <TextView
+                    android:id="@+id/tv_distance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#1c1c1e" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="DISTANCE"
+                    android:textSize="8sp"
+                    android:textStyle="bold"
+                    android:textColor="#a1a1aa"
+                    android:letterSpacing="0.1"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/card_time"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/stat_card_bg"
+                android:orientation="vertical"
+                android:padding="16dp">
+                <LinearLayout
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/icon_bg_blue"
+                    android:gravity="center"
+                    android:layout_marginBottom="12dp">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_calories"
+                        android:contentDescription="Time" />
+                </LinearLayout>
+                <TextView
+                    android:id="@+id/tv_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#1c1c1e" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ACTIVE TIME"
+                    android:textSize="8sp"
+                    android:textStyle="bold"
+                    android:textColor="#a1a1aa"
+                    android:letterSpacing="0.1"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/card_area"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/stat_card_bg"
+                android:orientation="vertical"
+                android:padding="16dp">
+                <LinearLayout
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/icon_bg_purple"
+                    android:gravity="center"
+                    android:layout_marginBottom="12dp">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_layers"
+                        android:contentDescription="Area" />
+                </LinearLayout>
+                <TextView
+                    android:id="@+id/tv_area"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#1c1c1e" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="AREA SQ M"
+                    android:textSize="8sp"
+                    android:textStyle="bold"
+                    android:textColor="#a1a1aa"
+                    android:letterSpacing="0.1"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

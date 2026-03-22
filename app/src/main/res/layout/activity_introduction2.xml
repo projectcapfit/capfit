@@ -34,17 +34,12 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 
+
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
-
-
-
-
-
-
-
         android:padding="30dp"
         android:text="SKIP"
         android:id="@+id/skip"
@@ -59,13 +54,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
-
-
-
-
-
-
-
         android:padding="30dp"
         android:text="NEXT"
         android:id="@+id/next"
@@ -100,6 +88,31 @@
             android:layout_margin="3dp"
             android:src="@drawable/black_circle"/>
 
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/intro_page_2_background"
+            android:layout_marginBottom="32dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Level Up Your \nFitness Quest"
+            android:fontFamily="@font/bebas_neue"
+            android:textSize="36sp"
+            android:textColor="@color/black"
+            android:layout_gravity="center"/>
     </LinearLayout>
 
 

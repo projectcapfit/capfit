@@ -41,6 +41,7 @@ class ForgotPassword : AppCompatActivity() {
                         if (task.isSuccessful) {
                             Toast.makeText(this@ForgotPassword, "Password reset email sent", Toast.LENGTH_SHORT).show()
                             startActivity(Intent(this@ForgotPassword, Login::class.java))
+                            finish()
                         }
                         else {
                             Toast.makeText(this@ForgotPassword, "Failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()

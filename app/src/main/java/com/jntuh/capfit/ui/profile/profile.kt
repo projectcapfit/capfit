@@ -1,0 +1,276 @@
+package com.jntuh.capfit.ui.profile
+
+import android.annotation.SuppressLint
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AlertDialog
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.widget.ImageViewCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.jntuh.capfit.adapter.SeasonAdapter
+import com.jntuh.capfit.data.SeasonData
+import com.jntuh.capfit.data.UserGameData
+import com.jntuh.capfit.databinding.ActivityProfileBinding
+import com.jntuh.capfit.databinding.DialogColorPickerBinding
+import com.jntuh.capfit.databinding.DialogEditUsernameBinding
+import com.jntuh.capfit.helper.ColorUtils
+import com.jntuh.capfit.viewmodel.UserGameDataViewModel
+import com.jntuh.capfit.viewmodel.SeasonViewModel
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import kotlin.getValue
+
+@AndroidEntryPoint
+class ProfileActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityProfileBinding
+    private lateinit var seasonAdapter: SeasonAdapter
+
+    private val viewModel: UserGameDataViewModel by viewModels()
+    private val seasonViewModel: SeasonViewModel by viewModels()
+
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+
+        binding = ActivityProfileBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
+
+        binding.btnBack.setOnClickListener {
+            finish()
+        }
+
+        observeViewModel()
+    }
+
+    @SuppressLint("NewApi")
+    private fun observeViewModel() {
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+
+                launch {
+                    viewModel.userGameData.collect { data ->
+                        data?.let { bindUserGameData(it) }
+                    }
+                }
+
+                launch {
+                    viewModel.loading.collect { isLoading ->
+                        // optional loader UI later
+                    }
+                }
+
+                launch {
+                    viewModel.error.collect { error ->
+                        error?.let {
+                            Toast.makeText(this@ProfileActivity, it, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+
+
+                launch {
+                    seasonViewModel.seasons.collect { data ->
+                        data?.let { bindSeasonData(it) }
+                    }
+                }
+
+                launch {
+                    seasonViewModel.currentSeason.collect { data ->
+                        data?.let { bindCurrentSeasonData(data) }
+                    }
+                }
+
+            }
+        }
+    }
+
+    //    private fun bindCurrentSeasonData(currentSeason: SeasonData) {
+//        binding.tvSeasonTitle.text = "Season ${currentSeason.seasonYear}-${currentSeason.seasonMonth}"
+//        binding.tvSeasonDistance.text = "Distance: ${currentSeason.distanceCoveredInThisSeason}"
+//        binding.tvSeasonArea.text = "Area: ${currentSeason.areaCoveredInThisSeason}"
+//        binding.tvSeasonScore.text = "Score: ${currentSeason.seasonScore}"
+//        binding.tvSeasonRank.text = "Rank: ${currentSeason.seasonRank}"
+//        binding.tvSeasonRankLabel.text = if (currentSeason.seasonRank == -1) "Unranked" else "Ranked"
+//    }
+    private fun bindCurrentSeasonData(currentSeason: SeasonData) {
+
+        binding.tvSeasonTitle.text =
+            "Season ${currentSeason.seasonYear}-${currentSeason.seasonMonth}"
+
+        val distM = currentSeason.distanceCoveredInThisSeason
+        binding.tvSeasonDistance.text = "Distance: " + if (distM >= 1000)
+            String.format("%.1f km", distM / 1000.0) else "$distM m"
+
+        binding.tvSeasonArea.text =
+            "Area: ${currentSeason.areaCoveredInThisSeason} m²"
+
+        binding.tvSeasonWorkouts.text =
+            "Workouts: ${currentSeason.numberOfWorkouts}"
+
+        if (currentSeason.seasonRank == -1) {
+            binding.tvSeasonRank.text = "Rank: N/A"
+            binding.tvSeasonRankLabel.text = "Unranked"
+        } else {
+            binding.tvSeasonRank.text = "Rank: ${currentSeason.seasonRank}"
+            binding.tvSeasonRankLabel.text = "Ranked"
+        }
+    }
+
+
+    private fun bindUserGameData(data: UserGameData) {
+
+//        binding.tvUserName.text =
+
+        if (data.userName.isBlank()) {
+            binding.tvUserName.text ="Set your username"
+            Log.d("asasas", "no username")
+            Log.d("asasas", "username ${data.toString()}")
+        } else {
+            binding.tvUserName.text = data.userName
+
+            Log.d("asasas", "username ${data.userName}")
+
+            Log.d("asasas", "username ${data.toString()}")
+
+        }
+
+        val colorInt = Color.parseColor(data.favoriteColor)
+
+        binding.viewFavoriteColor.setBackgroundColor(colorInt)
+
+        binding.cardProfileHeader.setCardBackgroundColor(
+            ColorUtils.withAlpha(colorInt, 0.12f)
+        )
+
+        binding.tvHighestDistance.text = data.highestDistanceCovered.toString()
+        binding.tvHighestArea.text = data.highestAreaCovered.toString()
+        binding.tvCurrentStreak.text = "${data.highestStreak}"
+        binding.tvAchievementsCount.text = data.achievements.size.toString()
+
+        // click listeners must use latest state
+        binding.rowEditUsername.setOnClickListener {
+            showEditUsernameDialog(data)
+        }
+
+        binding.rowEditColor.setOnClickListener {
+            showColorPickerDialog(data)
+
+        }
+
+    }
+
+
+    private fun bindSeasonData(data: List<SeasonData>){
+
+        // seasons
+        setupSeasonList(data ?: emptyList())
+    }
+
+    // ---------------- SEASON LIST ----------------
+
+    private fun setupSeasonList(seasons: List<SeasonData>) {
+
+
+        seasonAdapter = SeasonAdapter(seasons)
+
+        binding.rvSeasons.apply {
+            layoutManager = LinearLayoutManager(this@ProfileActivity)
+            adapter = seasonAdapter
+            setHasFixedSize(true)
+        }
+    }
+
+    // ---------------- EDIT USERNAME ----------------
+
+    private fun showEditUsernameDialog(currentData: UserGameData) {
+
+        val dialogBinding = DialogEditUsernameBinding.inflate(layoutInflater)
+        dialogBinding.etUsername.setText(currentData.userName)
+
+        AlertDialog.Builder(this)
+            .setView(dialogBinding.root)
+            .setPositiveButton("Save") { _, _ ->
+
+                val newName = dialogBinding.etUsername.text.toString().trim()
+
+                if (newName.isNotEmpty() && newName != currentData.userName) {
+
+                    val updated = currentData.copy(userName = newName)
+
+                    viewModel.updateUserGameData(updated)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    // ---------------- COLOR PICKER ----------------
+
+    private fun showColorPickerDialog(currentData: UserGameData) {
+
+        val dialogBinding = DialogColorPickerBinding.inflate(layoutInflater)
+
+        val colors = listOf(
+            "#3F51B5", "#2196F3", "#03A9F4", "#00BCD4",
+            "#4CAF50", "#8BC34A", "#CDDC39", "#FFEB3B",
+            "#FF9800", "#FF5722", "#E91E63", "#9C27B0"
+        )
+
+        val views = listOf(
+            dialogBinding.color1,  dialogBinding.color2,
+            dialogBinding.color3,  dialogBinding.color4,
+            dialogBinding.color5,  dialogBinding.color6,
+            dialogBinding.color7,  dialogBinding.color8,
+            dialogBinding.color9,  dialogBinding.color10,
+            dialogBinding.color11, dialogBinding.color12
+        )
+
+        views.forEachIndexed { index, view ->
+            val colorHex = colors[index]
+            view.setBackgroundColor(Color.parseColor(colorHex))
+            view.setOnClickListener {
+                val updated = currentData.copy(favoriteColor = colorHex)
+                viewModel.updateUserGameData(updated)
+
+                // Update accent color on profile header immediately
+                val colorInt = Color.parseColor(colorHex)
+                binding.viewFavoriteColor.setBackgroundColor(colorInt)
+                binding.cardProfileHeader.setCardBackgroundColor(
+                    ColorUtils.withAlpha(colorInt, 0.12f)
+                )
+                ImageViewCompat.setImageTintList(
+                    binding.imageMenuEdit,
+                    ColorStateList.valueOf(colorInt)
+                )
+                ImageViewCompat.setImageTintList(
+                    binding.imageMenuEditt,
+                    ColorStateList.valueOf(colorInt)
+                )
+            }
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Choose Favorite Color")
+            .setView(dialogBinding.root)
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+}

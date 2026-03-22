@@ -127,7 +127,7 @@
                     android:layout_height="wrap_content"
                     android:background="@null"
                     android:gravity="end"
-                    android:inputType="number"
+                    android:inputType="numberDecimal"
                     android:textColor="@color/black"
                     android:textSize="22sp"
                     app:layout_constraintBottom_toBottomOf="parent"

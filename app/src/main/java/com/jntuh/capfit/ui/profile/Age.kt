@@ -6,7 +6,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.jntuh.capfit.R
 import com.jntuh.capfit.databinding.ActivityAgeBinding
 import com.jntuh.capfit.ui.home.HomePage
 
@@ -28,14 +27,14 @@ class Age : AppCompatActivity() {
         }
 
         binding.apply {
-            agePicker.minValue = 1
+
+            agePicker.minValue = 5
             agePicker.maxValue = 100
-            agePicker.value = 25
+            agePicker.value = 21
             agePicker.wrapSelectorWheel = true
 
-
             skip.setOnClickListener {
-                startActivity(Intent(this@Age , HomePage::class.java))
+                startActivity(Intent(this@Age, HomePage::class.java))
                 finish()
             }
 
@@ -46,10 +45,10 @@ class Age : AppCompatActivity() {
                     apply()
                 }
 
-                startActivity(Intent(this@Age , Weight::class.java))
+                startActivity(Intent(this@Age, Weight::class.java))
                 finish()
             }
         }
-
     }
+
 }

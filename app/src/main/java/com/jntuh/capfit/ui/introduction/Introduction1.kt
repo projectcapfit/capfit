@@ -16,6 +16,7 @@ class Introduction1 : AppCompatActivity() {
 
         binding.buttonLetsStart.setOnClickListener {
             startActivity(Intent(this, Introduction2::class.java))
+            finish()
         }
     }
 }

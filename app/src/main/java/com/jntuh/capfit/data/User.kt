@@ -8,6 +8,8 @@ data class User(
     var gender : String? = null,
     var age : Int? = null,
     var weight : Int? = null,
-    var height : Int? = null,
-    var profile_picture : String? = null
+    var weightUnit : String? = "kg",
+    var height : Float? = null,
+    var heightUnit : String? = "cm",
+    var profilePicture : String? = null
 )

@@ -19,10 +19,12 @@ class Introduction2 : AppCompatActivity() {
         binding.apply {
             next.setOnClickListener {
                 startActivity(Intent(this@Introduction2, Introduction3::class.java))
+                finish()
             }
 
             skip.setOnClickListener {
                 startActivity(Intent(this@Introduction2, Login::class.java))
+                finish()
             }
         }
     }

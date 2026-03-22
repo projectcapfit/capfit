@@ -3,10 +3,38 @@
     <color name="black">#FF000000</color>
     <color name="my_white">#FCFCFC</color>
     <color name="light_black">#191919</color>
-    <color name="gold">#EBC866</color>
-    <color name="orange">#FF9B80</color>
     <color name="light_grey">#E63A4750</color>
     <color name="ic_launcher_background">#0c2139</color>
-    <color name="dark_white">#F5F5F5</color>
     <color name="light_green">#B0C929</color>
+    <color name="ash">#40696969</color>
+    <color name="achievements_light_green">#C9F7C5</color>
+    <color name="achievements_dark_green">#A7E6A3</color>
+    <color name="achievements_light_gray">#F2F5F8</color>
+    <color name="achievements_dark_gray">#E5EAEF</color>
+    <color name="achievements_text_dark_green">#278C4A</color>
+
+
+    <color name="green">#4CAF50</color>
+    <color name="white">#FFFFFF</color>
+
+    <color name="ach_primary">#A7E6A3</color>
+    <color name="ach_primary_light">#C9F7C5</color>
+
+    <color name="ach_bg_light">#F6F8F6</color>
+    <color name="ach_bg_dark">#141F13</color>
+
+    <color name="ach_text_title_light">#1A1A1A</color>
+    <color name="ach_text_title_dark">#F6F6F6</color>
+
+    <color name="ach_text_sub_light">#6C6C6C</color>
+    <color name="ach_text_sub_dark">#B6B6B6</color>
+
+    <color name="ach_locked_bg_light">#E0E0E0</color>
+    <color name="ach_locked_bg_dark">#2E2E2E</color>
+
+    <color name="add_friend_background">#E8F5E9</color>
+    <color name="add_friend">#66BB6A</color>
+
+    <color name="delete_friend_background">#FFEBEE</color>
+    <color name="delete_friend">#E47D7D</color>
 </resources>

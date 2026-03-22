@@ -6,8 +6,8 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/white_background"
-    tools:context=".ui.introduction.Introduction3">
+    tools:context=".ui.introduction.Introduction3"
+    android:background="@drawable/intro_page_3_background">
 
 
     <ImageView
@@ -32,42 +32,29 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 
+
     <Button
+        android:id="@+id/skip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
         android:background="@android:color/transparent"
-
-
-
-
-
-
-
         android:padding="30dp"
         android:text="SKIP"
-        android:id="@+id/skip"
-        android:textColor="@color/black"
+        android:textColor="@color/my_white"
         android:textSize="20sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
-
-
-
-
-
-
-
         android:padding="30dp"
         android:id="@+id/next"
         android:text="NEXT"
-        android:textColor="@color/black"
+        android:textColor="@color/my_white"
         android:textSize="20sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"

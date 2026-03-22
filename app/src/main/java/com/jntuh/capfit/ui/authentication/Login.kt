@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -17,16 +18,18 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.Companion.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-import com.google.firebase.auth.ActionCodeSettings
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.firestore
 import com.jntuh.capfit.R
 import com.jntuh.capfit.databinding.ActivityLoginBinding
 import com.jntuh.capfit.ui.home.HomePage
+import com.jntuh.capfit.ui.profile.PhoneNumber
+import com.jntuh.capfit.viewmodel.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.getValue
 
 @AndroidEntryPoint
 class Login : AppCompatActivity() {
@@ -34,160 +37,166 @@ class Login : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
     private lateinit var credentialManager: CredentialManager
 
-    @Inject
-    lateinit var auth: FirebaseAuth
+    @Inject lateinit var auth: FirebaseAuth
 
-    companion object { private const val TAG = "LoginTag" }
+    private val userViewModel: UserViewModel by viewModels()
+    companion object { private const val TAG = "asasas" }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            view.setPadding(
+                insets.getInsets(WindowInsetsCompat.Type.systemBars()).left,
+                insets.getInsets(WindowInsetsCompat.Type.systemBars()).top,
+                insets.getInsets(WindowInsetsCompat.Type.systemBars()).right,
+                insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
+            )
             insets
         }
 
-        savedInstanceState?.let {
-            binding.editTextEmail.setText(it.getString("email"))
-            binding.editTextPassword.setText(it.getString("password"))
+        binding.forgotPassword.setOnClickListener {
+            startActivity(Intent(this@Login , ForgotPassword::class.java))
         }
 
-        binding.apply {
-            registerButton.setOnClickListener {
-                startActivity(Intent(this@Login, SignUp::class.java))
-            }
-
-            forgotPassword.setOnClickListener {
-                startActivity(Intent(this@Login, ForgotPassword::class.java))
-            }
-
-            buttonLogin.setOnClickListener {
-                signInCheck()
-            }
-
-            loginWithGoogle.setOnClickListener {
-                signInWithGoogle()
-            }
+        binding.registerButton.setOnClickListener {
+            startActivity(Intent(this, SignUp::class.java))
+            finish()
         }
-    }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putString("email", binding.editTextEmail.text.toString())
-        outState.putString("password", binding.editTextPassword.text.toString())
+        binding.buttonLogin.setOnClickListener { signInCheck() }
+        binding.loginWithGoogle.setOnClickListener { signInWithGoogle() }
     }
 
     private fun signInWithGoogle() {
         credentialManager = CredentialManager.create(baseContext)
         launchCredentialManager()
-        Toast.makeText(this, "pressed", Toast.LENGTH_SHORT).show()
     }
 
     private fun launchCredentialManager() {
-        val googleIdOption = GetGoogleIdOption.Builder()
+        val googleOption = GetGoogleIdOption.Builder()
             .setServerClientId(getString(R.string.default_web_client_id))
             .setFilterByAuthorizedAccounts(false)
             .build()
 
         val request = GetCredentialRequest.Builder()
-            .addCredentialOption(googleIdOption)
+            .addCredentialOption(googleOption)
             .build()
 
         lifecycleScope.launch {
             try {
                 val result = credentialManager.getCredential(
-                    context = this@Login,
-                    request = request
+                    this@Login, request
                 )
                 handleSignIn(result.credential)
             } catch (e: GetCredentialException) {
-                Log.e(TAG, "Couldn't retrieve user's credentials: ${e.localizedMessage}")
+                Log.e(TAG, "Google Sign-in failed: ${e.localizedMessage}")
             }
         }
     }
 
     private fun handleSignIn(credential: Credential) {
-        if (credential is CustomCredential && credential.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-            firebaseAuthWithGoogle(googleIdTokenCredential.idToken)
-        } else {
-            Log.w(TAG, "Credential is not of type Google ID!")
+        if (credential is CustomCredential &&
+            credential.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+        ) {
+            val googleCred = GoogleIdTokenCredential.createFrom(credential.data)
+
+            // ⭐ Save Google profile picture
+            val googlePhotoUrl = googleCred.profilePictureUri?.toString()
+            getSharedPreferences("UserData", MODE_PRIVATE)
+                .edit()
+                .putString("googlePhoto", googlePhotoUrl)
+                .apply()
+
+            firebaseAuthWithGoogle(googleCred.idToken)
+
+            Log.d("asasas", "photoUri = ${googleCred.profilePictureUri}")
+            Log.d("asasas", "displayName = ${googleCred.displayName}")
+            Log.d("asasas", "email = ${googleCred.id}")
+
+        }
+    }
+    private fun firebaseAuthWithGoogle(idToken: String) {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+
+        auth.signInWithCredential(credential).addOnCompleteListener(this) { task ->
+            if (task.isSuccessful) {
+
+                val firebaseUser = auth.currentUser
+                val firebasePhotoUrl = firebaseUser?.photoUrl?.toString()
+
+                // Save to SharedPreferences (legacy — keep for now)
+                val prefs = getSharedPreferences("UserData", MODE_PRIVATE)
+                prefs.edit().putString("googlePhoto", firebasePhotoUrl).apply()
+
+                // Also persist to Firestore users/{uid}.profilePicture
+                // so UserViewModel can deliver it via userState
+                if (firebaseUser != null && !firebasePhotoUrl.isNullOrBlank()) {
+                    com.google.firebase.Firebase.firestore
+                        .collection("users")
+                        .document(firebaseUser.uid)
+                        .update("profilePicture", firebasePhotoUrl)
+                        .addOnSuccessListener {
+                            Log.d("asasas", "profilePicture saved to Firestore: $firebasePhotoUrl")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("asasas", "profilePicture save failed: ${e.message}")
+                        }
+                }
+
+                Log.d("asasas", "Saved Google Photo: $firebasePhotoUrl")
+
+                userViewModel.loadUser()
+                updateUI()
+            } else {
+                Toast.makeText(this, "Google authentication failed.", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
-    private fun firebaseAuthWithGoogle(idToken: String) {
-        val credential = GoogleAuthProvider.getCredential(idToken, null)
-        auth.signInWithCredential(credential)
-            .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) updateUI()
-                else Toast.makeText(baseContext, "Authentication failed.", Toast.LENGTH_SHORT).show()
+    private fun updateUI() {
+        userViewModel.loadUser()
+        lifecycleScope.launch {
+            userViewModel.userState.collect { user ->
+
+                if (user != null && user.phone != null && user.gender != null) {
+                    startActivity(Intent(this@Login, HomePage::class.java))
+                    finish()
+                    return@collect
+                }
+
+                if (user != null) {
+                    startActivity(Intent(this@Login, PhoneNumber::class.java))
+                    finish()
+                    return@collect
+                }
             }
+        }
     }
 
-    private fun updateUI() {
-        startActivity(Intent(this, HomePage::class.java))
-        finish()
-    }
 
     private fun signInCheck() {
         val email = binding.editTextEmail.text.toString().trim()
         val password = binding.editTextPassword.text.toString().trim()
 
-        auth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) {
-                    val user = auth.currentUser
-                    if (user != null && user.isEmailVerified) {
-                        updateUI()
-                    } else {
-                        Toast.makeText(
-                            this,
-                            "Please verify your email before logging in.",
-                            Toast.LENGTH_LONG
-                        ).show()
-                        sendVerificationEmail(user)
-                        auth.signOut()
-                    }
-                } else {
-                    Toast.makeText(
-                        this,
-                        "Authentication failed: Wrong Credentials",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    binding.editTextEmail.setText("")
-                    binding.editTextPassword.setText("")
-                }
+        if(email.isEmpty()){
+            Toast.makeText(this, "Email is Required", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (password.isEmpty()){
+            Toast.makeText(this, "Password is Required", Toast.LENGTH_SHORT).show()
+            return
+        }
+        auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                userViewModel.loadUser()
+                updateUI()
             }
-    }
 
-    private fun sendVerificationEmail(user: FirebaseUser? = auth.currentUser) {
-        user?.let {
-            val actionCodeSettings = ActionCodeSettings.newBuilder()
-                .setUrl("https://capfit-635ff.web.app")
-                .setHandleCodeInApp(true)
-                .setAndroidPackageName("com.jntuh.capfit", true, null)
-                .build()
-
-            it.sendEmailVerification(actionCodeSettings)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        Toast.makeText(
-                            this,
-                            "Verification email sent. Check your inbox.",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    } else {
-                        Toast.makeText(
-                            this,
-                            "Failed to send verification email: ${task.exception?.message}",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
+            else Toast.makeText(this, "Wrong Credentials", Toast.LENGTH_SHORT).show()
         }
     }
 }

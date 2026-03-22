@@ -167,12 +167,13 @@
                     android:background="@drawable/round_edit_text_box"
                     android:layout_marginHorizontal="20dp"
                     app:layout_constraintBottom_toTopOf="@+id/linearLayout2"
-                    app:layout_constraintTop_toBottomOf="@+id/textview5">
+                    app:layout_constraintTop_toBottomOf="@+id/textview5"
+                    android:padding="10dp">
 
                     <ImageView
-                        android:layout_width="50dp"
-                        android:layout_height="50dp"
-                        android:src="@drawable/twotone_5g_24"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:src="@drawable/google_icon"
                         android:layout_marginStart="10dp"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent"

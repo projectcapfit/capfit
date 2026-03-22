@@ -6,7 +6,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/white_background"
+    android:background="@drawable/intro_page_4_background"
     tools:context=".ui.introduction.Introduction4">
 
 
@@ -33,17 +33,11 @@
         app:layout_constraintBottom_toBottomOf="parent" />
 
 
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
-
-
-
-
-
-
-
         android:padding="30dp"
         android:text="NEXT"
         android:id="@+id/next"
@@ -77,8 +71,6 @@
             android:layout_height="wrap_content"
             android:layout_margin="3dp"
             android:src="@drawable/green_cylinder"/>
-
-
     </LinearLayout>
 
 

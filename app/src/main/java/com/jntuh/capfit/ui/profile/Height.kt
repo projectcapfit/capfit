@@ -3,16 +3,25 @@ package com.jntuh.capfit.ui.profile
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.jntuh.capfit.R
 import com.jntuh.capfit.databinding.ActivityHeightBinding
 import com.jntuh.capfit.ui.home.HomePage
+import com.jntuh.capfit.viewmodel.UserViewModel
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class Height : AppCompatActivity() {
 
     private lateinit var binding: ActivityHeightBinding
+    private val userViewModel: UserViewModel by viewModels()
+    private val scope = CoroutineScope(Dispatchers.Main)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,7 +36,7 @@ class Height : AppCompatActivity() {
             insets
         }
 
-        var heightUnitSelected = "ft"
+        var heightUnitSelected = "cm"
 
         binding.apply {
 
@@ -46,12 +55,10 @@ class Height : AppCompatActivity() {
             }
 
             skip.setOnClickListener {
-                startActivity(Intent(this@Height, HomePage::class.java))
-                finish()
+                goToHomePageAfterSaving()
             }
 
             next.setOnClickListener {
-
                 val heightValue = heightInput.text.toString().trim()
 
                 if (heightValue.isNotEmpty()) {
@@ -62,13 +69,38 @@ class Height : AppCompatActivity() {
                         apply()
                     }
 
-                    startActivity(Intent(this@Height, ProfilePhoto::class.java))
-                    finish()
-                } else {
-                    // show error if height is empty
-//                    tvError.text = "Please enter your height"
-//                    tvError.visibility = android.view.View.VISIBLE
+                    goToHomePageAfterSaving()
                 }
+            }
+        }
+    }
+
+    private fun goToHomePageAfterSaving() {
+        scope.launch {
+
+            val prefs = getSharedPreferences("UserData", MODE_PRIVATE)
+            val googlePhoto = prefs.getString("googlePhoto", null)
+
+            val user = userViewModel.getUser()
+            if (user != null) {
+
+                val updatedUser = user.copy(
+                    phone = prefs.getString("phoneNumber", user.phone),
+                    gender = prefs.getString("gender", user.gender),
+                    age = prefs.getInt("age", user.age ?: 0),
+                    height = prefs.getString("height", user.height?.toString())?.toFloatOrNull(),
+                    weight = prefs.getString("weight", user.weight?.toString())?.toIntOrNull(),
+                    heightUnit = prefs.getString("heightUnit", user.heightUnit),
+                    weightUnit = prefs.getString("weightUnit", user.weightUnit),
+                    profilePicture = googlePhoto
+                )
+
+                userViewModel.updateUser(updatedUser)
+
+                prefs.edit().clear().apply()
+
+                startActivity(Intent(this@Height, HomePage::class.java))
+                finish()
             }
         }
     }

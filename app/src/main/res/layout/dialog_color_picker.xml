@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="4"
+        android:padding="24dp"
+        android:useDefaultMargins="true">
+
+        <View android:id="@+id/color1"  android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/bg_color_circle" />
+        <View android:id="@+id/color2"  android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/bg_color_circle" />
+        <View android:id="@+id/color3"  android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/bg_color_circle" />
+        <View android:id="@+id/color4"  android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/bg_color_circle" />
+        <View android:id="@+id/color5"  android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/bg_color_circle" />
+        <View android:id="@+id/color6"  android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/bg_color_circle" />
+        <View android:id="@+id/color7"  android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/bg_color_circle" />
+        <View android:id="@+id/color8"  android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/bg_color_circle" />
+        <View android:id="@+id/color9"  android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/bg_color_circle" />
+        <View android:id="@+id/color10" android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/bg_color_circle" />
+        <View android:id="@+id/color11" android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/bg_color_circle" />
+        <View android:id="@+id/color12" android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/bg_color_circle" />
+
+    </GridLayout>
+</layout>

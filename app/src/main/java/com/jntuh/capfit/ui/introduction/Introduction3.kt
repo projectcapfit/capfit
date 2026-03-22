@@ -18,6 +18,7 @@ class Introduction3 : AppCompatActivity() {
         binding.apply {
             next.setOnClickListener {
                 startActivity(Intent(this@Introduction3, Introduction4::class.java))
+                finish()
             }
 
             skip.setOnClickListener {

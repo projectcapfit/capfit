@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="14dp">
+
+        <!-- Green accent dot -->
+        <View
+            android:id="@+id/accentDot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:background="@drawable/shape_dot"
+            android:backgroundTint="@color/light_green"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/txtWhenLabel"
+            app:layout_constraintBottom_toBottomOf="@id/txtWhenLabel" />
+
+        <!-- "Today" / "Yesterday" / "16 Mar" -->
+        <TextView
+            android:id="@+id/txtWhenLabel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:text="Today"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#111111"
+            app:layout_constraintStart_toEndOf="@id/accentDot"
+            app:layout_constraintEnd_toStartOf="@id/txtArea"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Duration · Distance -->
+        <LinearLayout
+            android:id="@+id/metaRow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            app:layout_constraintStart_toStartOf="@id/txtWhenLabel"
+            app:layout_constraintTop_toBottomOf="@id/txtWhenLabel"
+            app:layout_constraintEnd_toStartOf="@id/txtArea">
+
+            <TextView
+                android:id="@+id/txtDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="16m 4s"
+                android:textSize="11sp"
+                android:textColor="#B7BDC7"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="3dp"
+                android:layout_height="3dp"
+                android:layout_marginHorizontal="6dp"
+                android:background="@drawable/shape_dot"
+                android:backgroundTint="#B7BDC7" />
+
+            <TextView
+                android:id="@+id/txtDistance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1.69 km"
+                android:textSize="11sp"
+                android:textColor="#B7BDC7"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- Area — right side -->
+        <TextView
+            android:id="@+id/txtArea"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="6270 m²"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/light_green"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Divider between rows — hidden on last item via adapter -->
+    <View
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="#E4E4E7" />
+
+</LinearLayout>

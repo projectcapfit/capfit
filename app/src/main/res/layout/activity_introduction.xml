@@ -7,32 +7,34 @@
     android:fitsSystemWindows="false"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/white_background"
+    android:background="@drawable/intro_page_1_background"
     tools:context=".ui.introduction.Introduction1">
 
 
-    <ImageView
-        android:id="@+id/topGradient"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:adjustViewBounds="true"
-        android:src="@drawable/gradient_green_page_1_top"
-        android:scaleType="centerCrop"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+<!--    <ImageView-->
+<!--        android:id="@+id/topGradient"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:adjustViewBounds="true"-->
+<!--        android:src="@drawable/gradient_green_page_1_top"-->
+<!--        android:scaleType="centerCrop"-->
+<!--        app:layout_constraintTop_toTopOf="parent"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintEnd_toEndOf="parent" />-->
 
 
-    <ImageView
-        android:id="@+id/bottomGradient"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:scaleType="fitXY"
-        android:src="@drawable/gradient_green_page_1_bottom"
-        app:layout_constraintTop_toTopOf="@id/linearLayout"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+<!--    <ImageView-->
+<!--        android:id="@+id/bottomGradient"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="0dp"-->
+<!--        android:scaleType="fitXY"-->
+<!--        android:src="@drawable/gradient_green_page_1_bottom"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:layout_constraintHorizontal_bias="0.0"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintTop_toTopOf="@id/linearLayout"-->
+<!--        app:layout_constraintVertical_bias="0.0" />-->
 
     <LinearLayout
         android:id="@+id/linearLayout"
@@ -49,6 +51,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/bebas_neue"
             android:text="CAP  "
+            android:textColor="@color/black"
             android:textSize="48sp" />
 
         <TextView
@@ -69,6 +72,7 @@
         android:textSize="16sp"
         android:gravity="center"
         android:fontFamily="@font/dm_sans"
+        android:textColor="@color/black"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toTopOf="@id/button_lets_start"

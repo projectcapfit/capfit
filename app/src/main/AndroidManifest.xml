@@ -1,7 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.jntuh.capfit">
+    xmlns:tools="http://schemas.android.com/tools">
+
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission
+        android:name="android.permission.CAMERA"
+        tools:ignore="PermissionImpliesUnsupportedChromeOsHardware" />
 
     <application
         android:name=".MyApplication"
@@ -13,28 +32,68 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CapFit">
+        <service
+            android:name=".service.TrackingService"
+            android:foregroundServiceType="location"
+            android:exported="false" />
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBZN3Mt7_IIwiPNwHF0pYxZXG1pILefhnQ" />
         <activity
-            android:name=".ui.home.HomePage"
+            android:name=".ui.tracking.MapsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.friends.Friends"
+            android:exported="false" />
+
+
+        <activity
+            android:name=".ui.profile.ProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.notification.Notification"
+            android:exported="false" />
+        <activity
+            android:name=".ui.AchievementsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.CapFit" />
+        <activity
+            android:name=".ui.home.Leaderboard"
+            android:exported="false" />
+        <activity
+            android:name=".ui.home.DashBoard"
+            android:exported="false" />
+        <activity
+            android:name=".ui.Account.EditProfile"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.Account.MyAccount"
+            android:exported="false" />
+        <activity
+            android:name=".ui.profile.Height"
+            android:exported="false" />
+        <activity
+            android:name=".ui.profile.Weight"
+            android:exported="false" />
+        <activity
+            android:name=".ui.profile.Gender"
+            android:exported="false" />
+        <activity
+            android:name=".ui.profile.Age"
+            android:exported="false" />
+        <activity
+            android:name=".ui.profile.PhoneNumber"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.authentication.SignUp"
             android:exported="false" />
         <activity
             android:name=".ui.authentication.ForgotPassword"
-            android:exported="false" />
-
-
-        <activity
-            android:name=".ui.authentication.SignUp"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:scheme="capfit"
-                    android:host="verify" />
-            </intent-filter>
-        </activity>
-
-
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".ui.authentication.Login"
             android:exported="false" />
@@ -49,6 +108,9 @@
             android:exported="false" />
         <activity
             android:name=".ui.introduction.Introduction1"
+            android:exported="false" />
+        <activity
+            android:name=".ui.home.HomePage"
             android:exported="false" />
         <activity
             android:name=".MainActivity"
