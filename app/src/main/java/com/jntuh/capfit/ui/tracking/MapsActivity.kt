@@ -185,8 +185,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onPause() {
         super.onPause()
-        // Receiver unregistered in onDestroy — not here, so we never miss
-        // broadcasts that arrive while app is briefly paused (screen dim, notification, etc.)
     }
 
     override fun onDestroy() {
@@ -641,14 +639,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
      * Zooms camera to fit new territory if it has area.
      */
     private fun refreshAllTerritories(centerLat: Double, centerLng: Double, newSession: TrackingSession) {
-        // Immediately draw the new session territory from already-fetched data
-        // so the polygon appears instantly without waiting for Firestore re-fetch
+        // Option A: Clear all stale own territory polygons from the map FIRST
+        // so ghost polygons (absorbed/merged sessions) never appear
+        myTerritoryPolygons.forEach { it.remove() }
+        myTerritoryPolygons.clear()
+
+        // Immediately draw ONLY the new/merged session — not the stale cache
+        // This gives instant visual feedback without showing ghost old territories
         if (newSession.area > 0 && newSession.points.isNotEmpty()) {
             val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
             val sessionWithUser = newSession.copy(userId = currentUserId ?: newSession.userId)
-            drawOwnTerritories(listOf(sessionWithUser) +
-                    (trackingService?.ownTerritories?.value ?: emptyList())
-            )
+            drawOwnTerritories(listOf(sessionWithUser))
 
             // Zoom to fit the new territory
             val validPoints = newSession.points.filter { it.time >= 0L }
@@ -658,7 +659,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
 
-        // Then refresh from Firestore to get latest state (merges, subtracts from other users)
+        // Then re-fetch from Firestore to get the true final state
+        // (all own territories correctly merged, others correctly subtracted)
         val service = trackingService
         if (service != null) {
             service.fetchNearbyForLocation(centerLat, centerLng)
@@ -731,19 +733,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
-
-    /**
-     * Splits stored polygon points into PolygonData objects.
-     *
-     * Encoding from AreaCalculator.extractBoundaryPoints():
-     *   time = -1L → separator between polygons in a MultiPolygon
-     *   time = -2L → separator before a hole ring within a polygon
-     *   time >= 0  → actual coordinate point
-     *
-     * Each PolygonData has an outer ring + optional list of hole rings.
-     * Holes are rendered as cutouts (PolygonOptions.addHole()) not filled shapes.
-     */
     data class PolygonData(
         val outerRing: List<LatLng>,
         val holes: List<List<LatLng>> = emptyList()
@@ -779,10 +768,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         return polygons
     }
 
-    /**
-     * Generates a unique, consistent color for a given userId.
-     * Same userId always gets the same color across sessions.
-     */
     private fun sessionFromDoc(doc: com.google.firebase.firestore.DocumentSnapshot): TrackingSession? {
         return try {
             val sessionId = doc.getString("sessionId") ?: return null

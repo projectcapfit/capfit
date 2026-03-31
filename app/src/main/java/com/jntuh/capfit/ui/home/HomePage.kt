@@ -2,7 +2,6 @@ package com.jntuh.capfit.ui.home
 
 import android.Manifest
 import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -35,8 +34,10 @@ import com.jntuh.capfit.viewmodel.SeasonViewModel
 import com.jntuh.capfit.viewmodel.UserGameDataViewModel
 import com.jntuh.capfit.viewmodel.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import java.text.SimpleDateFormat
 import javax.inject.Inject
 import kotlin.math.absoluteValue
+import java.util.Locale
 
 @AndroidEntryPoint
 class HomePage : BaseActivity() {
@@ -44,7 +45,6 @@ class HomePage : BaseActivity() {
     private lateinit var binding: ActivityHomeChildBinding
     @Inject lateinit var firestore: FirebaseFirestore
     @Inject lateinit var auth: FirebaseAuth
-    @Inject lateinit var sharedPreferences: SharedPreferences
 
     private lateinit var workoutAdapter: WorkoutAdapter
 
@@ -123,26 +123,18 @@ class HomePage : BaseActivity() {
         lifecycleScope.launchWhenStarted {
             userViewModel.userState.collect { user ->
                 if (user != null) {
-                    // Photo only — name comes from UserGameData
-                    val firestorePhoto = user.profilePicture
-                        ?.takeIf { it.isNotBlank() && it != "null" }
+                    // Simple: user.profilePicture → show image, null → letter avatar
+                    val photo = user.profilePicture?.takeIf { it.isNotBlank() && it != "null" }
 
-                    val prefPhoto = getSharedPreferences("UserData", MODE_PRIVATE)
-                        .getString("googlePhoto", null)
-                        ?.takeIf { it.isNotBlank() && it != "null" }
-
-                    val finalPhoto = firestorePhoto ?: prefPhoto
-
-                    // Use gameUserName for letter avatar initial too
                     val displayName = userGameViewModel.userGameData.value
                         ?.userName?.takeIf { it.isNotBlank() }
                         ?: user.name
                         ?: auth.currentUser?.displayName
                         ?: "User"
 
-                    Log.d("asasas", "Profile photo — firestorePhoto=$firestorePhoto prefPhoto=$prefPhoto → using=$finalPhoto displayName=$displayName")
+                    Log.d("asasas", "Profile photo — profilePicture=$photo displayName=$displayName")
 
-                    setProfilePhoto(displayName, finalPhoto)
+                    setProfilePhoto(displayName, photo)
                 }
             }
         }
@@ -257,7 +249,18 @@ class HomePage : BaseActivity() {
                                 if (sessions.isEmpty()) {
                                     showNoActivity()
                                 } else {
-                                    showSessions(sessions)
+
+                                    val formatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+
+                                    val sorted = sessions.sortedWith(
+                                        compareByDescending<TrackingSession> {
+                                            formatter.parse(it.date)?.time ?: 0L
+                                        }.thenByDescending {
+                                            it.startTime
+                                        }
+                                    )
+
+                                    showSessions(sorted)
                                 }
                             }
                         }
@@ -297,7 +300,7 @@ class HomePage : BaseActivity() {
         // Refresh current season directly — bypasses list cache
         // ensures card stats update right after returning from a workout
         seasonViewModel.refreshCurrentSeason()
-
+        observeUserProfile()
         if (::workoutAdapter.isInitialized) {
             loadRecentSessions()
         }

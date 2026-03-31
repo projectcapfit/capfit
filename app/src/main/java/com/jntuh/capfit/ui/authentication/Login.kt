@@ -134,17 +134,24 @@ class Login : AppCompatActivity() {
 
                 // Also persist to Firestore users/{uid}.profilePicture
                 // so UserViewModel can deliver it via userState
-                if (firebaseUser != null && !firebasePhotoUrl.isNullOrBlank()) {
+                // Only save custom photos — ignore Google's default generated avatars
+                val isCustomPhoto = firebasePhotoUrl?.contains("/a-/") == true ||
+                        (firebasePhotoUrl != null && !firebasePhotoUrl.contains("googleusercontent.com"))
+
+                if (firebaseUser != null && !firebasePhotoUrl.isNullOrBlank() && isCustomPhoto) {
                     com.google.firebase.Firebase.firestore
                         .collection("users")
                         .document(firebaseUser.uid)
-                        .update("profilePicture", firebasePhotoUrl)
+                        .set(mapOf("profilePicture" to firebasePhotoUrl),
+                            com.google.firebase.firestore.SetOptions.merge())
                         .addOnSuccessListener {
                             Log.d("asasas", "profilePicture saved to Firestore: $firebasePhotoUrl")
                         }
                         .addOnFailureListener { e ->
                             Log.e("asasas", "profilePicture save failed: ${e.message}")
                         }
+                } else {
+                    Log.d("asasas", "profilePicture skipped — default Google avatar or null")
                 }
 
                 Log.d("asasas", "Saved Google Photo: $firebasePhotoUrl")

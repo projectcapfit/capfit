@@ -65,28 +65,19 @@ class MyAccount : AppCompatActivity() {
                     ?: "User"
                 binding.userName.text = finalName
 
-                // Profile photo — use user.profilePicture (Firestore) first,
-                // fall back to SharedPrefs, then letter avatar
-                val firestorePhoto = user.profilePicture
-                    ?.takeIf { it.isNotBlank() && it != "null" }
+                // Simple: user.profilePicture → show image, null → letter avatar
+                val photo = user.profilePicture?.takeIf { it.isNotBlank() && it != "null" }
 
-                val prefPhoto = getSharedPreferences("UserData", MODE_PRIVATE)
-                    .getString("googlePhoto", null)
-                    ?.takeIf { it.isNotBlank() && it != "null" }
-
-                val finalPhoto = firestorePhoto ?: prefPhoto
-
-                if (finalPhoto != null) {
+                if (photo != null) {
                     binding.profileImage.visibility = View.VISIBLE
                     binding.profileLetter.visibility = View.GONE
                     Glide.with(this@MyAccount)
-                        .load(finalPhoto)
+                        .load(photo)
                         .placeholder(com.jntuh.capfit.R.drawable.profile_circle_bg)
                         .error(com.jntuh.capfit.R.drawable.profile_circle_bg)
                         .circleCrop()
                         .into(binding.profileImage)
                 } else {
-                    binding.profileImage.visibility = View.GONE
                     binding.profileLetter.visibility = View.VISIBLE
                     binding.profileLetter.text = finalName.first().uppercase()
                 }

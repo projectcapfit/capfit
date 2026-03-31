@@ -663,7 +663,6 @@ class TrackingService : Service() {
      * When the same user walks again over their own area or extends it,
      * we merge both polygons into one unified territory.
      * The new session itself gets dissolved into the existing one.
-     *
      * capturedArea is adjusted by (unionArea - existingArea) — no double counting.
      */
     private fun computeMergeResult(

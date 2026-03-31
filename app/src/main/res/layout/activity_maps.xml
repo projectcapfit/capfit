@@ -143,6 +143,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@drawable/ic_footprints"
+                        app:tint="@android:color/white"
                         android:contentDescription="Distance" />
                 </LinearLayout>
                 <TextView
@@ -184,6 +185,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@drawable/ic_calories"
+                        app:tint="@android:color/white"
                         android:contentDescription="Time" />
                 </LinearLayout>
                 <TextView
@@ -224,7 +226,8 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@drawable/ic_layers"
-                        android:contentDescription="Area" />
+                        android:contentDescription="Area"
+                        app:tint="@android:color/white" />
                 </LinearLayout>
                 <TextView
                     android:id="@+id/tv_area"

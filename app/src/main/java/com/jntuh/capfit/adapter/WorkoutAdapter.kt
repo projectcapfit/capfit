@@ -60,7 +60,7 @@ class WorkoutAdapter(
     override fun getItemCount() = sessions.size
 
     fun submitList(newList: List<TrackingSession>) {
-        sessions = newList.sortedByDescending { it.startTime }
+        sessions = newList
         notifyDataSetChanged()
     }
 
