@@ -69,7 +69,6 @@ class Leaderboard : AppCompatActivity() {
     private fun observeData() {
 
         viewModel.tab.observe(this) { tab ->
-            // Update tab visual state
             val selectedBg  = com.jntuh.capfit.R.drawable.tab_selected_bg
             val unselectedBg = com.jntuh.capfit.R.drawable.tab_unselected_bg
             val white = Color.WHITE

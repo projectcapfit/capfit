@@ -37,4 +37,8 @@
 
     <color name="delete_friend_background">#FFEBEE</color>
     <color name="delete_friend">#E47D7D</color>
+    <color name="green_600">#43A047</color>
+    <color name="green_700">#388E3C</color>
+
+    <color name="neon_green">#00FF00</color>
 </resources>

@@ -164,7 +164,6 @@ class HomePage : BaseActivity() {
         lifecycleScope.launchWhenStarted {
             seasonViewModel.currentSeason.collect { season ->
                 if (season == null) return@collect
-
                 val distanceM = season.distanceCoveredInThisSeason
                 binding.txtDistance.text = if (distanceM >= 1000)
                     String.format("%.1f km", distanceM / 1000.0)
@@ -174,6 +173,10 @@ class HomePage : BaseActivity() {
                 binding.txtArea.text = "${season.areaCoveredInThisSeason} m²"
                 binding.txtWorkouts.text = season.numberOfWorkouts.toString()
                 binding.txtActiveTime.text = season.totalTimePlayed.ifBlank { "0s" }
+
+                Log.d("asasas" , "came to set ${season}")
+                Log.d("asasas" , " came to set data ${season.distanceCoveredInThisSeason} ${season.areaCoveredInThisSeason} ${season.numberOfWorkouts} ${season.totalTimePlayed}")
+                Log.d("asasas","came to set the data ${binding.txtDistance.text} ${binding.txtArea.text} ${binding.txtWorkouts.text} ${binding.txtActiveTime.text}")
             }
         }
     }
@@ -192,7 +195,6 @@ class HomePage : BaseActivity() {
     private fun loadRecentSessions() {
         val uid = auth.currentUser?.uid ?: return
 
-        // Step 1: get session IDs from userSessionState/data
         firestore.collection("users")
             .document(uid)
             .collection("userSessionState")
@@ -207,8 +209,6 @@ class HomePage : BaseActivity() {
                     return@addOnSuccessListener
                 }
 
-                // Step 2: fetch each session doc
-                // Firestore whereIn supports max 30 per query — chunk if needed
                 val sessions = mutableListOf<TrackingSession>()
                 val chunks = sessionIds.chunked(30)
                 var completedChunks = 0
@@ -290,6 +290,7 @@ class HomePage : BaseActivity() {
 
     // Re-load recent sessions every time user comes back to HomePage
     // (e.g. after completing a workout in MapsActivity)
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onResume() {
         super.onResume()
 
@@ -299,7 +300,7 @@ class HomePage : BaseActivity() {
 
         // Refresh current season directly — bypasses list cache
         // ensures card stats update right after returning from a workout
-        seasonViewModel.refreshCurrentSeason()
+        observeSeasonData()
         observeUserProfile()
         if (::workoutAdapter.isInitialized) {
             loadRecentSessions()
@@ -359,7 +360,7 @@ class HomePage : BaseActivity() {
     private fun listenUnreadNotifications() {
         val uid = auth.currentUser?.uid ?: return
 
-        firestore.collection("users")
+        firestore.collection("userGameData")
             .document(uid)
             .collection("notifications")
             .whereEqualTo("isRead", false)

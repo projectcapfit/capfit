@@ -1,5 +1,6 @@
 package com.jntuh.capfit.repository
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -39,20 +40,26 @@ class SeasonDataManager @Inject constructor(
             return cachedSeasonList!!
 
         return try {
+
+            Log.d("asasas" , "From SeasonDataManager Trying to get all seasons")
             val snapshot = seasonsCollection()
                 .orderBy("seasonYear", Query.Direction.DESCENDING)
                 .orderBy("seasonMonth", Query.Direction.DESCENDING)
                 .get()
                 .await()
 
+            Log.d("asasas" , "From SeasonDataManager Trying to get all seasons Snap ${snapshot.toString()}")
             val list = snapshot.documents.mapNotNull {
                 it.toObject(SeasonData::class.java)
             }.toMutableList()
 
+            Log.d("asasas" , "From SeasonDataManager Trying to get all seasons List ${list.toString()}")
             cachedSeasonList = list
             list
         } catch (e: Exception) {
             e.printStackTrace()
+
+            Log.d("asasas" , "From SeasonDataManager Trying to get all seasons Failed in getAllSeasons ${e.toString()}")
             emptyList()
         }
     }
@@ -122,8 +129,14 @@ class SeasonDataManager @Inject constructor(
             if (doc.exists()) {
                 doc.toObject(SeasonData::class.java)!!
             } else {
+                // New season doc doesn't exist — this is either the user's very first season
+                // or they skipped 1+ months. In both cases we reset territories so the
+                // leaderboard starts fresh.
+                val uid = firebaseAuth.currentUser!!.uid
+                clearTerritoriesAndSessionState(uid)
+
                 val newSeason = SeasonData(
-                    uid = firebaseAuth.currentUser!!.uid,
+                    uid = uid,
                     seasonYear = year,
                     seasonMonth = month
                 )
@@ -145,6 +158,63 @@ class SeasonDataManager @Inject constructor(
                 seasonYear = year,
                 seasonMonth = month
             )
+        }
+    }
+
+    /**
+     * Problem 2: Called when a new season starts (including after skipped months).
+     * Clears:
+     *   1. All session docs belonging to the user (their captured territories)
+     *   2. userSessionState — sessions[], capturedArea reset to 0
+     *   3. userGameData.capturedArea reset to 0 (leaderboard fresh start)
+     *
+     * Runs in batches of 500 (Firestore batch limit) to handle users with many sessions.
+     * If the user has no sessions this is a no-op (getAllSessionIds returns empty).
+     */
+    private suspend fun clearTerritoriesAndSessionState(uid: String) {
+        try {
+            // Step 1: fetch all session IDs for this user
+            val sessionIds = mutableListOf<String>()
+            val stateSnap = db.collection("users").document(uid)
+                .collection("userSessionState").document("data")
+                .get().await()
+            if (stateSnap.exists()) {
+                @Suppress("UNCHECKED_CAST")
+                val ids = stateSnap.get("sessions") as? List<String> ?: emptyList()
+                sessionIds.addAll(ids)
+            }
+
+            // Step 2: delete all session docs in chunks of 500
+            sessionIds.chunked(500).forEach { chunk ->
+                val batch = db.batch()
+                chunk.forEach { sessionId ->
+                    batch.delete(db.collection("sessions").document(sessionId))
+                }
+                batch.commit().await()
+            }
+
+            // Step 3: reset userSessionState (clear sessions[], capturedArea = 0)
+            db.collection("users").document(uid)
+                .collection("userSessionState").document("data")
+                .set(mapOf(
+                    "sessions"      to emptyList<String>(),
+                    "groups"        to emptyList<String>(),
+                    "isSessionLive" to false,
+                    "isGroupLive"   to false
+                ), com.google.firebase.firestore.SetOptions.merge())
+                .await()
+
+            // Step 4: reset capturedArea in userGameData to 0 (fresh leaderboard for new season)
+            db.collection("userGameData").document(uid)
+                .set(mapOf("capturedArea" to 0.0), com.google.firebase.firestore.SetOptions.merge())
+                .await()
+
+            android.util.Log.d("SeasonDataManager",
+                "Season reset for $uid — deleted ${sessionIds.size} sessions, cleared capturedArea")
+
+        } catch (e: Exception) {
+            android.util.Log.e("SeasonDataManager", "clearTerritoriesAndSessionState failed: ${e.message}")
+            e.printStackTrace()
         }
     }
 

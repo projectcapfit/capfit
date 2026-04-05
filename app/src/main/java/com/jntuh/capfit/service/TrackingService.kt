@@ -745,10 +745,15 @@ class TrackingService : Service() {
                 "yMin" to session.yMin, "yMax" to session.yMax,
                 "isLive"    to false
             ))
+            // Problem 3: capturedArea is now owned by userGameData only.
+            // userSessionState only tracks session IDs + live flag.
             batch.set(userStateRef, mapOf(
                 "sessions"      to FieldValue.arrayUnion(session.sessionId),
-                "isSessionLive" to false,
-                "capturedArea"  to FieldValue.increment(netNew)
+                "isSessionLive" to false
+            ), com.google.firebase.firestore.SetOptions.merge())
+            val userGameDataRef = db.collection("userGameData").document(userId)
+            batch.set(userGameDataRef, mapOf(
+                "capturedArea" to FieldValue.increment(netNew)
             ), com.google.firebase.firestore.SetOptions.merge())
             Log.d(TAG, "No overlap — saved new session ${session.sessionId} area=${String.format("%.1f", session.area)}m²")
 
@@ -793,10 +798,14 @@ class TrackingService : Service() {
             }
 
             // Remove absorbed IDs from sessions list, keep survivor
+            // Problem 3: capturedArea removed from userSessionState
             batch.set(userStateRef, mapOf(
                 "sessions"      to FieldValue.arrayRemove(*absorbedIds.toTypedArray()),
-                "isSessionLive" to false,
-                "capturedArea"  to FieldValue.increment(netNew)
+                "isSessionLive" to false
+            ), com.google.firebase.firestore.SetOptions.merge())
+            val userGameDataRef = db.collection("userGameData").document(userId)
+            batch.set(userGameDataRef, mapOf(
+                "capturedArea" to FieldValue.increment(netNew)
             ), com.google.firebase.firestore.SetOptions.merge())
 
             Log.d(TAG, "capturedArea: finalMerged=${String.format("%.1f", finalArea)}m² sumExisting=${String.format("%.1f", sumExistingOwnArea)}m² netNew=${String.format("%.1f", netNew)}m²")
@@ -834,8 +843,11 @@ class TrackingService : Service() {
         op: BatchOperation
     ) {
         val areaBefore = op.existingSession.area
+        // Problem 3: ownerRef still used for sessions[] array updates only
         val ownerRef = db.collection(COL_USERS).document(op.existingSession.userId)
             .collection(COL_USER_STATE).document("data")
+        // capturedArea now lives in userGameData only
+        val ownerGameRef = db.collection("userGameData").document(op.existingSession.userId)
         val sessionRef = db.collection(COL_SESSIONS).document(op.existingSession.sessionId)
 
         when {
@@ -843,7 +855,7 @@ class TrackingService : Service() {
             // ── Case 1: Fully consumed (nothing left) ──────────────────────────
             op.resultGeometry.isEmpty -> {
                 batch.update(sessionRef, mapOf("area" to 0.0, "points" to emptyList<Any>()))
-                batch.set(ownerRef, mapOf("capturedArea" to FieldValue.increment(-areaBefore)), com.google.firebase.firestore.SetOptions.merge())
+                batch.set(ownerGameRef, mapOf("capturedArea" to FieldValue.increment(-areaBefore)), com.google.firebase.firestore.SetOptions.merge())
                 notifyTerritoryFullyConsumed(op.existingSession.userId, areaBefore)
                 Log.d(TAG, "Territory fully consumed (${areaBefore}m²)")
             }
@@ -855,7 +867,7 @@ class TrackingService : Service() {
                 if (newArea < MIN_TERRITORY_AREA_M2) {
                     // Remaining sliver too small to keep — treat as fully consumed
                     batch.update(sessionRef, mapOf("area" to 0.0, "points" to emptyList<Any>()))
-                    batch.set(ownerRef, mapOf("capturedArea" to FieldValue.increment(-areaBefore)), com.google.firebase.firestore.SetOptions.merge())
+                    batch.set(ownerGameRef, mapOf("capturedArea" to FieldValue.increment(-areaBefore)), com.google.firebase.firestore.SetOptions.merge())
                     notifyTerritoryFullyConsumed(op.existingSession.userId, areaBefore)
                     Log.d(TAG, "Trimmed remainder ${newArea}m² < threshold — deleted")
                 } else {
@@ -870,7 +882,7 @@ class TrackingService : Service() {
                         "xMin" to env.minX, "xMax" to env.maxX,
                         "yMin" to env.minY, "yMax" to env.maxY
                     ))
-                    batch.set(ownerRef, mapOf("capturedArea" to FieldValue.increment(newArea - areaBefore)), com.google.firebase.firestore.SetOptions.merge())
+                    batch.set(ownerGameRef, mapOf("capturedArea" to FieldValue.increment(newArea - areaBefore)), com.google.firebase.firestore.SetOptions.merge())
                     notifyTerritoryTrimmed(op.existingSession.userId, areaBefore, newArea)
                     Log.d(TAG, "Territory trimmed: ${areaBefore}m² → ${newArea}m²")
                 }
@@ -918,7 +930,7 @@ class TrackingService : Service() {
                 if (validPieces.isEmpty()) {
                     // All pieces were below threshold — fully consumed
                     batch.update(sessionRef, mapOf("area" to 0.0, "points" to emptyList<Any>()))
-                    batch.set(ownerRef, mapOf("capturedArea" to FieldValue.increment(-areaBefore)), com.google.firebase.firestore.SetOptions.merge())
+                    batch.set(ownerGameRef, mapOf("capturedArea" to FieldValue.increment(-areaBefore)), com.google.firebase.firestore.SetOptions.merge())
                     notifyTerritoryFullyConsumed(op.existingSession.userId, areaBefore)
                     Log.d(TAG, "All split pieces below threshold — territory fully consumed")
                     return
@@ -948,13 +960,13 @@ class TrackingService : Service() {
                     )
                     batch.set(db.collection(COL_SESSIONS).document(newDocId), splitSession)
 
-                    // Fix: add new split doc to B's sessions list
+                    // ownerRef still used for sessions[] array — capturedArea no longer here
                     batch.set(ownerRef, mapOf("sessions" to FieldValue.arrayUnion(newDocId)), com.google.firebase.firestore.SetOptions.merge())
                 }
 
-                // Update B's capturedArea — total valid kept area minus what they had before
+                // Update B's capturedArea in userGameData — total valid kept area minus before
                 val totalKeptArea = validPieces.sumOf { it.area }
-                batch.set(ownerRef, mapOf("capturedArea" to FieldValue.increment(totalKeptArea - areaBefore)), com.google.firebase.firestore.SetOptions.merge())
+                batch.set(ownerGameRef, mapOf("capturedArea" to FieldValue.increment(totalKeptArea - areaBefore)), com.google.firebase.firestore.SetOptions.merge())
 
                 notifyTerritorySplit(
                     userId         = op.existingSession.userId,
@@ -1013,27 +1025,32 @@ class TrackingService : Service() {
             )
             Log.d(TAG, "SeasonData updated — dist=${session.distance}m area=${session.area}m²")
 
-            // Read latest capturedArea from userSessionState — source of truth
-            val latestCapturedArea = try {
-                val stateSnap = db.collection(COL_USERS).document(userId)
-                    .collection(COL_USER_STATE).document("data")
-                    .get().await()
-                stateSnap.getDouble("capturedArea") ?: 0.0
-            } catch (e: Exception) { 0.0 }
-
-            // Update UserGameData — highest-ever records + live capturedArea for leaderboard
+            // Problem 3: capturedArea is now the single source of truth in userGameData.
+            // The batch in saveSessionToFirestore already incremented it via FieldValue.increment.
+            // We just need to read it back fresh to update the other fields (highestDist etc.)
             val userData = userGameDataManager.getUserGameData()
+            // Force a fresh read to get the post-batch capturedArea value
+            userGameDataManager.clearCache()
+            val freshData = userGameDataManager.getUserGameData()
             val newDistance = session.distance.toInt()
             val newArea     = session.area.toInt()
 
-            val updatedData = userData.copy(
-                highestDistanceCovered = maxOf(userData.highestDistanceCovered, newDistance),
-                highestAreaCovered     = maxOf(userData.highestAreaCovered, newArea),
-                capturedArea           = latestCapturedArea
+            val updatedData = freshData.copy(
+                highestDistanceCovered = maxOf(freshData.highestDistanceCovered, newDistance),
+                highestAreaCovered     = maxOf(freshData.highestAreaCovered, newArea)
+                // capturedArea already correct in Firestore from batch — don't overwrite it
             )
 
-            userGameDataManager.updateUserGameData(updatedData)
-            Log.d(TAG, "UserGameData updated — capturedArea=${latestCapturedArea}m² highestDist=${updatedData.highestDistanceCovered}m")
+            // Use set with merge so we only update the two highest-record fields
+            // and leave capturedArea (already updated by batch) untouched
+            db.collection("userGameData").document(userId)
+                .set(mapOf(
+                    "highestDistanceCovered" to updatedData.highestDistanceCovered,
+                    "highestAreaCovered"     to updatedData.highestAreaCovered
+                ), com.google.firebase.firestore.SetOptions.merge())
+                .await()
+            userGameDataManager.clearCache()
+            Log.d(TAG, "UserGameData updated — highestDist=${updatedData.highestDistanceCovered}m area=${updatedData.highestAreaCovered}m²")
 
             // Update streak — uses session.date already formatted as "yyyy-MM-dd"
             userGameDataManager.updateStreakAfterWorkout(session.date)
@@ -1290,11 +1307,9 @@ class TrackingService : Service() {
         keptPieces: Int,
         discardedArea: Double
     ) {
-        // TODO: implement push notification
         Log.d(TAG, "NOTIFY [$userId] territory split → $keptPieces pieces kept, ${discardedArea}m² discarded")
     }
 
-    // ─── Notification ─────────────────────────────────────────────────────────
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

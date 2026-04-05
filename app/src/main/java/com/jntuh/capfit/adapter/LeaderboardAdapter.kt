@@ -1,5 +1,6 @@
 package com.jntuh.capfit.adapter
 
+import android.content.Intent
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
@@ -9,6 +10,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.jntuh.capfit.R
 import com.jntuh.capfit.data.UserGameData
+import com.jntuh.capfit.ui.friends.OtherProfile
 
 class LeaderboardAdapter(
     private val currentUid: String
@@ -33,16 +35,20 @@ class LeaderboardAdapter(
         val (user, rank) = items[position]
         val isMe = user.uid == currentUid
 
+        holder.itemView.setOnClickListener { it ->
+            val intent =  Intent(holder.itemView.context, OtherProfile::class.java)
+            intent.putExtra("user_game_data", user)
+            holder.itemView.context.startActivity(intent)
+        }
         // Rank label
         holder.tvRank.text = "#$rank"
-
         // Name — bold + highlight if current user
         holder.tvName.text = if (isMe) "${user.userName} (You)" else user.userName
+
         holder.tvName.setTextColor(
             if (isMe) Color.parseColor("#B0CF3B") else Color.parseColor("#111111")
         )
 
-        // Area
         val area = user.capturedArea
         holder.tvArea.text = if (area >= 1_000_000)
             String.format("%.2f km²", area / 1_000_000)

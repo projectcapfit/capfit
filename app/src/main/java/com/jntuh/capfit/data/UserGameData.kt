@@ -1,5 +1,9 @@
 package com.jntuh.capfit.data
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
 data class UserGameData(
     var uid: String = "",
     var userName: String = "",
@@ -17,4 +21,4 @@ data class UserGameData(
     var achievements: List<Int> = emptyList(),
     var achievementProgress: Map<String, Int> = emptyMap(),
     var friendsList: List<String> = emptyList()
-)
+) : Parcelable

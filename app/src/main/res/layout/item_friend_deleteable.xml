@@ -46,9 +46,10 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
             android:layout_gravity="center"
+            android:padding="3dp"
             android:src="@drawable/person_remove_24"
             app:tint="@color/delete_friend"
             android:contentDescription="Delete Friend" />

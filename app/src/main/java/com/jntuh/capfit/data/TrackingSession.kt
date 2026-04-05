@@ -3,7 +3,6 @@ package com.jntuh.capfit.data
 import com.google.firebase.firestore.PropertyName
 
 data class TrackingSession(
-    //   sessions/{sessionID}/{document}
     val sessionId: String = "",
     val userId: String = "",
     val userName: String = "Unknown",

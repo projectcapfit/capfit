@@ -23,7 +23,6 @@ class UserGameDataManager @Inject constructor(
         val uid = firebaseAuth.currentUser?.uid ?: return UserGameData()
         cachedUserGameData?.let { return it }
 
-        Log.d("asasas", "UserGameDataManager and it came")
         return try {
             val doc = db.collection("userGameData")
                 .document(uid)

@@ -138,6 +138,7 @@ class UserGameDataViewModel @Inject constructor(
             _loading.value = false
         }
     }
+
     private val _friends = MutableStateFlow<List<UserGameData>>(emptyList())
     val friends: StateFlow<List<UserGameData>> = _friends
 

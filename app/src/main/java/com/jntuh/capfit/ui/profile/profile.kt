@@ -92,64 +92,18 @@ class ProfileActivity : AppCompatActivity() {
                     }
                 }
 
-                launch {
-                    seasonViewModel.currentSeason.collect { data ->
-                        data?.let { bindCurrentSeasonData(data) }
-                    }
-                }
 
             }
-        }
-    }
-
-    //    private fun bindCurrentSeasonData(currentSeason: SeasonData) {
-//        binding.tvSeasonTitle.text = "Season ${currentSeason.seasonYear}-${currentSeason.seasonMonth}"
-//        binding.tvSeasonDistance.text = "Distance: ${currentSeason.distanceCoveredInThisSeason}"
-//        binding.tvSeasonArea.text = "Area: ${currentSeason.areaCoveredInThisSeason}"
-//        binding.tvSeasonScore.text = "Score: ${currentSeason.seasonScore}"
-//        binding.tvSeasonRank.text = "Rank: ${currentSeason.seasonRank}"
-//        binding.tvSeasonRankLabel.text = if (currentSeason.seasonRank == -1) "Unranked" else "Ranked"
-//    }
-    private fun bindCurrentSeasonData(currentSeason: SeasonData) {
-
-        binding.tvSeasonTitle.text =
-            "Season ${currentSeason.seasonYear}-${currentSeason.seasonMonth}"
-
-        val distM = currentSeason.distanceCoveredInThisSeason
-        binding.tvSeasonDistance.text = "Distance: " + if (distM >= 1000)
-            String.format("%.1f km", distM / 1000.0) else "$distM m"
-
-        binding.tvSeasonArea.text =
-            "Area: ${currentSeason.areaCoveredInThisSeason} m²"
-
-        binding.tvSeasonWorkouts.text =
-            "Workouts: ${currentSeason.numberOfWorkouts}"
-
-        if (currentSeason.seasonRank == -1) {
-            binding.tvSeasonRank.text = "Rank: N/A"
-            binding.tvSeasonRankLabel.text = "Unranked"
-        } else {
-            binding.tvSeasonRank.text = "Rank: ${currentSeason.seasonRank}"
-            binding.tvSeasonRankLabel.text = "Ranked"
         }
     }
 
 
     private fun bindUserGameData(data: UserGameData) {
 
-//        binding.tvUserName.text =
-
         if (data.userName.isBlank()) {
             binding.tvUserName.text ="Set your username"
-            Log.d("asasas", "no username")
-            Log.d("asasas", "username ${data.toString()}")
         } else {
             binding.tvUserName.text = data.userName
-
-            Log.d("asasas", "username ${data.userName}")
-
-            Log.d("asasas", "username ${data.toString()}")
-
         }
 
         val colorInt = Color.parseColor(data.favoriteColor)
@@ -165,7 +119,6 @@ class ProfileActivity : AppCompatActivity() {
         binding.tvCurrentStreak.text = "${data.highestStreak}"
         binding.tvAchievementsCount.text = data.achievements.size.toString()
 
-        // click listeners must use latest state
         binding.rowEditUsername.setOnClickListener {
             showEditUsernameDialog(data)
         }
@@ -174,21 +127,16 @@ class ProfileActivity : AppCompatActivity() {
             showColorPickerDialog(data)
 
         }
-
     }
 
 
     private fun bindSeasonData(data: List<SeasonData>){
-
+        Log.d("asasas" , "From profile.kt season data ${data.toString()}")
         // seasons
         setupSeasonList(data ?: emptyList())
     }
 
-    // ---------------- SEASON LIST ----------------
-
     private fun setupSeasonList(seasons: List<SeasonData>) {
-
-
         seasonAdapter = SeasonAdapter(seasons)
 
         binding.rvSeasons.apply {
@@ -197,8 +145,6 @@ class ProfileActivity : AppCompatActivity() {
             setHasFixedSize(true)
         }
     }
-
-    // ---------------- EDIT USERNAME ----------------
 
     private fun showEditUsernameDialog(currentData: UserGameData) {
 
@@ -221,8 +167,6 @@ class ProfileActivity : AppCompatActivity() {
             .setNegativeButton("Cancel", null)
             .show()
     }
-
-    // ---------------- COLOR PICKER ----------------
 
     private fun showColorPickerDialog(currentData: UserGameData) {
 

@@ -96,6 +96,17 @@ object AreaCalculator {
      * Called after workout ends with all collected points.
      * Points are already collinear-filtered by TrackingService via shouldAddPoint().
      * Distance is passed in separately since it was calculated on raw points.
+     *
+     * FIX (ordering bug): Previously tryCloseLoop ran FIRST, stripping the head/tail
+     * before intersection detection. This was wrong for paths like figure-8s where the
+     * crossing segments live in the trimmed head — after trimming, 0 intersections are
+     * found and a concave star polygon is saved instead of the true enclosed territory.
+     *
+     * Correct order:
+     *   1. Run intersection detection on the FULL path first.
+     *   2. If crossings found → extract loops → build union. Done.
+     *   3. Only if 0 crossings → fall back to tryCloseLoop for clean oval/rectangle walks.
+     *   4. If still nothing → near-miss check on working points.
      */
     fun calculate(
         filteredPoints: List<TrackPoint>,
@@ -109,36 +120,75 @@ object AreaCalculator {
             return emptyResult(totalDistanceM)
         }
 
-        // EC7: Try to find a closed sub-loop first (with head/tail trimming).
-        // This must run BEFORE intersection detection so that intersection
-        // indices are computed on the same trimmed point list used by extractLoops.
-        // If a sub-loop is found, tails are stripped here — intersections are then
-        // detected only within the clean loop body.
+        // ── Step 1: intersection detection on the FULL original path ──────────
+        // Must run before any head/tail trimming so crossing segments are not lost.
+        val fullPathIntersections = findSelfIntersectionsSweep(filteredPoints)
+        Log.d(TAG, "Full-path intersections: ${fullPathIntersections.size}")
+
+        if (fullPathIntersections.isNotEmpty()) {
+            // Path crosses itself — extract every enclosed loop and union them.
+            // tryCloseLoop is NOT needed here: the crossing points already define closure.
+            val loops = extractLoops(filteredPoints, fullPathIntersections)
+            Log.d(TAG, "Extracted ${loops.size} loops from full-path intersections")
+            if (loops.isNotEmpty()) {
+                val unionGeometry = buildUnion(loops)
+                if (unionGeometry != null && !unionGeometry.isEmpty) {
+                    val area = calculateAreaM2(unionGeometry)
+                    val envelope = unionGeometry.envelopeInternal
+                    val boundaryPoints = extractBoundaryPoints(unionGeometry)
+                    Log.d(TAG, "Final area (intersection path): $area m², points: ${boundaryPoints.size}")
+                    return CalculationResult(
+                        totalDistanceM = totalDistanceM,
+                        areaM2 = area,
+                        polygonPoints = boundaryPoints,
+                        xMin = envelope.minX,
+                        xMax = envelope.maxX,
+                        yMin = envelope.minY,
+                        yMax = envelope.maxY,
+                        hasTerritory = area > 0.0
+                    )
+                }
+            }
+            // Loops extraction failed (e.g. all degenerate) — fall through to tryCloseLoop
+            Log.w(TAG, "Intersection loops extraction yielded nothing — falling back to tryCloseLoop")
+        }
+
+        // ── Step 2: no crossings on full path → try clean loop closure ────────
+        // EC7: handles oval/rectangle walks where path simply closes near start.
+        // Head/tail trimming is safe here because we already confirmed no crossings exist.
         val workingPoints = tryCloseLoop(filteredPoints) ?: filteredPoints
 
-        // O3: Sweep line self-intersection detection (O(n log n) vs O(n²))
-        val rawIntersections = findSelfIntersectionsSweep(workingPoints)
-
-        // EC8: Near-miss intersection — collinear filter collapses walking turns into long
-        // straight segments. Two segments may pass within a few metres of each other without
-        // mathematically crossing. Detect these and snap them to a crossing point.
-        val intersections = if (rawIntersections.isNotEmpty()) {
-            rawIntersections
+        // ── Step 3: near-miss on working points ───────────────────────────────
+        // EC8: collinear filter can collapse a physical crossing into two segments
+        // that miss each other by a few metres. Check working points only (post-trim).
+        val intersections = if (workingPoints !== filteredPoints) {
+            // Working points are trimmed — re-run sweep on them too, then near-miss
+            val trimmedIntersections = findSelfIntersectionsSweep(workingPoints)
+            if (trimmedIntersections.isNotEmpty()) {
+                Log.d(TAG, "Found ${trimmedIntersections.size} intersections on trimmed path")
+                trimmedIntersections
+            } else {
+                val nearMiss = findNearMissIntersections(workingPoints)
+                if (nearMiss.isNotEmpty()) {
+                    Log.d(TAG, "Found ${nearMiss.size} near-miss intersections (GPS collinear filter artifact)")
+                }
+                nearMiss
+            }
         } else {
+            // Path never closed — near-miss is our last hope
             val nearMiss = findNearMissIntersections(workingPoints)
             if (nearMiss.isNotEmpty()) {
-                Log.d(TAG, "Found ${nearMiss.size} near-miss intersections (GPS collinear filter artifact)")
+                Log.d(TAG, "Found ${nearMiss.size} near-miss intersections on open path")
             }
             nearMiss
         }
-        Log.d(TAG, "Found ${intersections.size} self-intersections")
 
         val closedPoints = if (workingPoints !== filteredPoints) workingPoints else null
 
         val unionGeometry = if (intersections.isNotEmpty()) {
-            // Path crosses itself — extract enclosed loops
+            // Trimmed path crosses itself (or near-miss) — extract loops
             val loops = extractLoops(workingPoints, intersections)
-            Log.d(TAG, "Extracted ${loops.size} loops from intersections")
+            Log.d(TAG, "Extracted ${loops.size} loops from trimmed-path intersections")
             if (loops.isEmpty()) return emptyResult(totalDistanceM)
             buildUnion(loops)
         } else if (closedPoints != null) {

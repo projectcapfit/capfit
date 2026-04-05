@@ -57,7 +57,7 @@ class SeasonAdapter(seasons: List<SeasonData> = emptyList()) :
 
         holder.binding.tvSeasonRank.text =
             if (season.seasonRank == -1) "Unranked"
-            else "#${season.seasonRank}"
+            else "Rank ${season.seasonRank}"
     }
 
     private fun getMonthName(month: String): String {

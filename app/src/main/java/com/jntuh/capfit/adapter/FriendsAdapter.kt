@@ -1,11 +1,15 @@
 package com.jntuh.capfit.adapter
 
+import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.jntuh.capfit.data.UserGameData
 import com.jntuh.capfit.databinding.ItemFriendAddableBinding
 import com.jntuh.capfit.databinding.ItemFriendDeleteableBinding
+import com.jntuh.capfit.ui.friends.OtherProfile
 
 class FriendsAdapter(
     private val onAddClick: (UserGameData) -> Unit,
@@ -56,6 +60,15 @@ class FriendsAdapter(
 
         val item = list[position]
 
+        holder.itemView.setOnClickListener {
+
+            val context = holder.itemView.context
+            val intent = Intent(context, OtherProfile::class.java)
+
+            intent.putExtra("user_game_data", item)
+            context.startActivity(intent)
+        }
+
         when (holder) {
 
             is FriendVH -> {
@@ -69,12 +82,16 @@ class FriendsAdapter(
                 holder.binding.textName.text = item.userName
                 holder.binding.btnAdd.setOnClickListener {
                     onAddClick(item)
+                    holder.binding.apply {
+                        btnAdd.isEnabled = false
+
+                        btnAdd.alpha = 0.4f
+                    }
+
                 }
             }
         }
     }
-
-    // ---------- ViewHolders ----------
 
     class FriendVH(val binding: ItemFriendDeleteableBinding)
         : RecyclerView.ViewHolder(binding.root)
