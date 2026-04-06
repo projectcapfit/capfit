@@ -1,11 +1,17 @@
 package com.jntuh.capfit.ui.home
 
 import android.Manifest
+import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.widget.Button
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,6 +40,8 @@ import com.jntuh.capfit.viewmodel.SeasonViewModel
 import com.jntuh.capfit.viewmodel.UserGameDataViewModel
 import com.jntuh.capfit.viewmodel.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import javax.inject.Inject
 import kotlin.math.absoluteValue
@@ -100,17 +108,19 @@ class HomePage : BaseActivity() {
             startActivity(Intent(this, Notification::class.java))
         }
 
+        observeSeasonData()
         setupGreeting()
         observeUserProfile()
         observeUserGameData()
-        observeSeasonData()
         checkStreakOnOpen()
         listenUnreadNotifications()
-
         requestAllPermissions()
         temp()
-        setupRecentActivity()
 
+        lifecycleScope.launch {
+            delay(500)
+            setupRecentActivity()
+        }
     }
 
     private fun temp(){
@@ -132,7 +142,6 @@ class HomePage : BaseActivity() {
                         ?: auth.currentUser?.displayName
                         ?: "User"
 
-                    Log.d("asasas", "Profile photo — profilePicture=$photo displayName=$displayName")
 
                     setProfilePhoto(displayName, photo)
                 }
@@ -149,8 +158,6 @@ class HomePage : BaseActivity() {
                 val gameUserName = gameData.userName.takeIf { it.isNotBlank() }
                     ?: auth.currentUser?.displayName
                     ?: "User"
-
-                Log.d("asasas", "UserGameData loaded — userName=$gameUserName")
 
                 binding.userName.text = gameUserName
                 baseBinding.userName2.text = gameUserName
@@ -173,15 +180,9 @@ class HomePage : BaseActivity() {
                 binding.txtArea.text = "${season.areaCoveredInThisSeason} m²"
                 binding.txtWorkouts.text = season.numberOfWorkouts.toString()
                 binding.txtActiveTime.text = season.totalTimePlayed.ifBlank { "0s" }
-
-                Log.d("asasas" , "came to set ${season}")
-                Log.d("asasas" , " came to set data ${season.distanceCoveredInThisSeason} ${season.areaCoveredInThisSeason} ${season.numberOfWorkouts} ${season.totalTimePlayed}")
-                Log.d("asasas","came to set the data ${binding.txtDistance.text} ${binding.txtArea.text} ${binding.txtWorkouts.text} ${binding.txtActiveTime.text}")
-            }
+}
         }
     }
-
-    // ─── Recent Activity ──────────────────────────────────────────────────────
 
     private fun setupRecentActivity() {
         workoutAdapter = WorkoutAdapter()
@@ -298,6 +299,10 @@ class HomePage : BaseActivity() {
         userGameViewModel.clearCache()
         userGameViewModel.loadUserGameData()
 
+        if (seasonViewModel.seasonChange()){
+            showNewSeasonDialog(this)
+        }
+
         // Refresh current season directly — bypasses list cache
         // ensures card stats update right after returning from a workout
         observeSeasonData()
@@ -375,21 +380,29 @@ class HomePage : BaseActivity() {
             }
     }
 
+    fun showNewSeasonDialog(context: Context) {
+        val view = LayoutInflater.from(context)
+            .inflate(R.layout.dialog_new_season, null)
+
+        val dialog = AlertDialog.Builder(context)
+            .setView(view)
+            .setCancelable(false)
+            .create()
+
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+        val btnStart = view.findViewById<Button>(R.id.btnStart)
+
+        btnStart.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
     private val permissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
 
             var allGranted = true
-
-            permissions.entries.forEach {
-                if (!it.value) {
-                    allGranted = false
-                    Toast.makeText(this, "${it.key} denied", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            if (allGranted) {
-                Toast.makeText(this, "All permissions granted", Toast.LENGTH_SHORT).show()
-            }
         }
 
     private fun requestAllPermissions() {

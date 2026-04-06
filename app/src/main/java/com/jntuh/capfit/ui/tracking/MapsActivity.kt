@@ -89,7 +89,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             trackingService = (binder as TrackingService.LocalBinder).getService()
             isServiceBound = true
             observeServiceStateFlows()
-            Log.d(TAG, "Service connected")
 
             // If map is already ready, load territories now that service is bound
             if (::googleMap.isInitialized) {
@@ -103,7 +102,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             val service = trackingService
             val missedSession = service?.lastCompletedSessionId?.value
             if (service != null && missedSession != null && !service.isTracking.value) {
-                Log.d(TAG, "Missed WORKOUT_COMPLETE broadcast — recovering sessionId=$missedSession")
                 onWorkoutComplete(missedSession)
             }
         }
@@ -126,16 +124,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                 TrackingService.ACTION_WORKOUT_COMPLETE -> {
                     val sessionId = intent.getStringExtra(TrackingService.EXTRA_SESSION_ID) ?: run {
-                        Log.e(TAG, "ACTION_WORKOUT_COMPLETE received but sessionId is null!")
                         return
                     }
-                    Log.d(TAG, "── ACTION_WORKOUT_COMPLETE received — sessionId=$sessionId")
                     onWorkoutComplete(sessionId)
                 }
 
                 TrackingService.ACTION_SESSION_TERMINATED -> {
                     val reason = intent.getStringExtra(TrackingService.EXTRA_TERMINATION_REASON)
-                    Log.d(TAG, "── ACTION_SESSION_TERMINATED received — reason=$reason")
                     onSessionTerminated(reason)
                 }
 
@@ -191,9 +186,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         super.onDestroy()
         try {
             unregisterReceiver(trackingReceiver)
-            Log.d(TAG, "Broadcast receiver unregistered")
         } catch (e: IllegalArgumentException) {
-            Log.w(TAG, "Receiver already unregistered")
         }
         if (isServiceBound) {
             unbindService(serviceConnection)
@@ -290,7 +283,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             addAction(TrackingService.ACTION_OWN_TERRITORIES_UPDATED)
         }
         ContextCompat.registerReceiver(this, trackingReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
-        Log.d(TAG, "Broadcast receiver registered for full activity lifetime")
+
     }
 
     // ─── Map Ready ────────────────────────────────────────────────────────────
@@ -328,7 +321,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     if (location == null) {
                         // lastLocation is null when GPS hasn't been used yet since reboot.
                         // Fall back to requesting a fresh current location.
-                        Log.d(TAG, "No last known location — requesting fresh location")
                         requestFreshLocationAndJump()
                         return@addOnSuccessListener
                     }
@@ -336,7 +328,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     moveCameraAndLoadTerritories(location.latitude, location.longitude)
                 }
         } catch (e: SecurityException) {
-            Log.e(TAG, "Location permission missing: ${e.message}")
         }
     }
 
@@ -356,12 +347,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 .addOnSuccessListener { location ->
                     if (location != null) {
                         moveCameraAndLoadTerritories(location.latitude, location.longitude)
-                    } else {
-                        Log.w(TAG, "Fresh location also null — waiting for GPS fix via ACTION_LOCATION_UPDATE")
                     }
                 }
         } catch (e: Exception) {
-            Log.e(TAG, "requestFreshLocation failed: ${e.message}")
         }
     }
 
@@ -369,7 +357,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         if (!::googleMap.isInitialized) return
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 17f))
         isFirstLocation = false
-        Log.d(TAG, "Camera → $lat, $lng")
         val service = trackingService
         if (service != null) {
             service.fetchNearbyForLocation(lat, lng)
@@ -431,14 +418,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         hideStatsSheet()
         currentTrailPolyline?.remove()
         currentTrailPolyline = null
-        Toast.makeText(this, "Make a loop to capture territory!", Toast.LENGTH_SHORT).show()
     }
 
     private fun stopWorkout() {
         trackingService?.stopTracking()
         btnStop.isEnabled = false
         tvStatusPill.text = "Processing..."
-        Toast.makeText(this, "Calculating your territory...", Toast.LENGTH_SHORT).show()
     }
 
     // ─── Camera: First Location During Workout ────────────────────────────────
@@ -555,14 +540,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
      * 4. Zooms camera to fit new territory
      */
     private fun onWorkoutComplete(sessionId: String) {
-        Log.d(TAG, "── onWorkoutComplete ── fetching session $sessionId from Firestore")
         FirebaseFirestore.getInstance()
             .collection(TrackingService.COL_SESSIONS)
             .document(sessionId)
             .get()
             .addOnSuccessListener { doc ->
                 if (!doc.exists()) {
-                    Log.e(TAG, "onWorkoutComplete: session doc does not exist!")
                     resetUIAfterWorkout(0.0, 0.0)
                     return@addOnSuccessListener
                 }
@@ -594,14 +577,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     TrackPoint(lat, lng, time)
                 }
 
-                Log.d(TAG, "onWorkoutComplete: area=${area}m² dist=${distance}m duration=${durationMs}ms points=${points.size}")
-
                 runOnUiThread {
                     resetUIAfterWorkout(distance, area, durationMs)
 
-                    if (area <= 0) {
-                        Toast.makeText(this, "No territory — try making a loop!", Toast.LENGTH_SHORT).show()
-                    }
 
                     val centerLat = if (yMin != 0.0 || yMax != 0.0) (yMin + yMax) / 2
                     else googleMap.cameraPosition.target.latitude
@@ -616,7 +594,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
             }
             .addOnFailureListener { e ->
-                Log.e(TAG, "Failed to fetch completed session: ${e.message}")
                 runOnUiThread { resetUIAfterWorkout(0.0, 0.0) }
             }
     }
@@ -706,7 +683,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 drawOwnTerritories(own)
                 drawOthersTerritories(others)
             }
-            .addOnFailureListener { Log.e(TAG, "fetchAllTerritories failed: ${it.message}") }
     }
 
     // ─── Session Terminated ───────────────────────────────────────────────────
@@ -720,7 +696,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             tvStatusPill.text   = "GPS Active"
             currentTrailPolyline?.remove()
             currentTrailPolyline = null
-            Log.d(TAG, "── onSessionTerminated ── reason=$reason")
             when (reason) {
                 "malpractice" -> {
                     Toast.makeText(this, "🚨 Speed limit exceeded! Session deleted.", Toast.LENGTH_SHORT).show()
@@ -799,7 +774,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 isLive = false
             )
         } catch (e: Exception) {
-            Log.e(TAG, "sessionFromDoc failed: ${e.message}")
             null
         }
     }

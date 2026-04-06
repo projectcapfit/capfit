@@ -93,7 +93,6 @@ class Login : AppCompatActivity() {
                 )
                 handleSignIn(result.credential)
             } catch (e: GetCredentialException) {
-                Log.e(TAG, "Google Sign-in failed: ${e.localizedMessage}")
             }
         }
     }
@@ -112,11 +111,6 @@ class Login : AppCompatActivity() {
                 .apply()
 
             firebaseAuthWithGoogle(googleCred.idToken)
-
-            Log.d("asasas", "photoUri = ${googleCred.profilePictureUri}")
-            Log.d("asasas", "displayName = ${googleCred.displayName}")
-            Log.d("asasas", "email = ${googleCred.id}")
-
         }
     }
     private fun firebaseAuthWithGoogle(idToken: String) {
@@ -144,17 +138,7 @@ class Login : AppCompatActivity() {
                         .document(firebaseUser.uid)
                         .set(mapOf("profilePicture" to firebasePhotoUrl),
                             com.google.firebase.firestore.SetOptions.merge())
-                        .addOnSuccessListener {
-                            Log.d("asasas", "profilePicture saved to Firestore: $firebasePhotoUrl")
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e("asasas", "profilePicture save failed: ${e.message}")
-                        }
-                } else {
-                    Log.d("asasas", "profilePicture skipped — default Google avatar or null")
                 }
-
-                Log.d("asasas", "Saved Google Photo: $firebasePhotoUrl")
 
                 userViewModel.loadUser()
                 updateUI()

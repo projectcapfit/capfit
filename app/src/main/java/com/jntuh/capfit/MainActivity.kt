@@ -6,13 +6,19 @@ import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.FirebaseAuth
 import com.jntuh.capfit.databinding.ActivityMainBinding
+import com.jntuh.capfit.repository.SeasonDataManager
+import com.jntuh.capfit.repository.UserGameDataManager
+import com.jntuh.capfit.repository.UserManager
 import com.jntuh.capfit.ui.authentication.Login
 import com.jntuh.capfit.ui.home.HomePage
 import com.jntuh.capfit.ui.introduction.Introduction1
 import com.jntuh.capfit.viewmodel.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.getValue
 
@@ -25,6 +31,9 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var auth: FirebaseAuth
 
     private val userViewModel: UserViewModel by viewModels()
+    @Inject lateinit var seasonDataManager: SeasonDataManager
+    @Inject lateinit var userGameDataManager: UserGameDataManager
+    @Inject lateinit var userManager : UserManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,7 +60,26 @@ class MainActivity : AppCompatActivity() {
             finish()
             return
         }
+        lifecycleScope.launch {
+            try {
+                val seasonDeferred = async {
+                    seasonDataManager.getOrCreateCurrentSeason()
+                }
 
+                val userDeferred = async {
+                    userGameDataManager.getUserGameData()
+                }
+
+                val user =  async{ userManager.getCurrentUser() }
+
+                seasonDeferred.await()
+                userDeferred.await()
+                user.await()
+
+            } catch (e : Exception){
+                e.printStackTrace()
+            }
+        }
         startActivity(Intent(this@MainActivity, HomePage::class.java))
         finish()
     }

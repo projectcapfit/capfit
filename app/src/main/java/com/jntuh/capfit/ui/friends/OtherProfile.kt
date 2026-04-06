@@ -74,7 +74,6 @@ class OtherProfile : AppCompatActivity() {
                 val seasonsList = result.documents.mapNotNull {
                     it.toObject(SeasonData::class.java)
                 }
-                Log.d("asasas","binding Season Data ${result.toString()}")
                 bindSeasonData(seasonsList)
             }
 
@@ -86,7 +85,6 @@ class OtherProfile : AppCompatActivity() {
 
                 val photo = document.data?.get("profilePicture")
 
-                Log.d("asasas" , "From OtherProfile.kt photo ${photo}")
                 if (photo != null) {
                     binding.profileImage.visibility = View.VISIBLE
                     binding.profileLetter.visibility = View.GONE
@@ -174,7 +172,6 @@ class OtherProfile : AppCompatActivity() {
     }
 
     private fun bindSeasonData(data: List<SeasonData>){
-        Log.d("asasas" , "From OtherProfile.kt season data ${data.toString()}")
         setupSeasonList(data ?: emptyList())
     }
 

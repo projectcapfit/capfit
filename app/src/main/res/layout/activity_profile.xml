@@ -372,7 +372,7 @@
                     android:layout_marginTop="28dp"
                     android:layout_marginBottom="16dp" />
 
-                <androidx.recyclerview.widget.RecyclerView
+                <com.jntuh.capfit.ui.custom.WrapContentRecyclerView
                     android:id="@+id/rvSeasons"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

@@ -14,6 +14,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.jntuh.capfit.adapter.LeaderboardAdapter
 import com.jntuh.capfit.databinding.ActivityLeaderboardBinding
 import com.jntuh.capfit.viewmodel.LeaderboardViewModel
+import com.jntuh.capfit.viewmodel.SeasonViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -22,6 +23,7 @@ class Leaderboard : AppCompatActivity() {
 
     private lateinit var binding: ActivityLeaderboardBinding
     private val viewModel: LeaderboardViewModel by viewModels()
+    private val seasonViewModel: SeasonViewModel by viewModels()
     private lateinit var adapter: LeaderboardAdapter
 
     @Inject lateinit var auth: FirebaseAuth
@@ -122,6 +124,16 @@ class Leaderboard : AppCompatActivity() {
             else
                 String.format("%.0f m²", area)
             binding.yourRankScore.text = "   $areaStr"
+
+            if (area.toInt() == 0){
+
+                seasonViewModel.updateCurrentSeasonRank(-1)
+            }
+            else{
+
+                seasonViewModel.updateCurrentSeasonRank(rank)
+            }
+
         }
     }
 }

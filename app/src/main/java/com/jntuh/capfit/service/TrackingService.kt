@@ -160,9 +160,7 @@ class TrackingService : Service() {
         // into the next session or running while on HomePage
         try {
             fusedLocationClient.removeLocationUpdates(locationCallback)
-            Log.d(TAG, "onDestroy: location updates removed")
         } catch (e: Exception) {
-            Log.e(TAG, "onDestroy: failed to remove location updates: ${e.message}")
         }
         serviceScope.cancel()
     }
@@ -220,7 +218,6 @@ class TrackingService : Service() {
                 "yMax"      to 0.0,
                 "isLive"    to true
             ))
-            .addOnFailureListener { Log.e(TAG, "Session create failed: ${it.message}") }
 
         // Mark user as having a live session
         // IMPORTANT: only set isSessionLive=true here
@@ -234,7 +231,7 @@ class TrackingService : Service() {
                 userStateRef.set(
                     mapOf("isSessionLive" to true),
                     com.google.firebase.firestore.SetOptions.merge()
-                ).addOnFailureListener { Log.e(TAG, "User state update failed: ${it.message}") }
+                )
             } else {
                 // First ever workout — initialise all fields from scratch
                 userStateRef.set(
@@ -245,27 +242,22 @@ class TrackingService : Service() {
                         "sessions"      to emptyList<String>(),
                         "groups"        to emptyList<String>()
                     )
-                ).addOnFailureListener { Log.e(TAG, "User state create failed: ${it.message}") }
+                )
             }
-        }.addOnFailureListener { Log.e(TAG, "User state read failed: ${it.message}") }
+        }
 
-        Log.d(TAG, "── startTracking ── sessionId=$sessionId userId=$userId groupId=$groupId")
         requestLocationUpdates()
         updateNotification("Workout started!")
-        Log.d(TAG, "GPS updates requested — interval: ${GPS_INTERVAL_MS}ms")
 
         // Capture the starting point immediately — don't wait 15s for first GPS interval
         try {
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                 if (location != null) {
-                    Log.d(TAG, "Starting point captured immediately: ${location.latitude}, ${location.longitude}")
                     handleNewPoint(location.latitude, location.longitude)
                 } else {
-                    Log.w(TAG, "Starting point: lastLocation null — will wait for first GPS interval")
                 }
             }
         } catch (e: SecurityException) {
-            Log.e(TAG, "Starting point: permission missing")
         }
     }
 
@@ -274,25 +266,20 @@ class TrackingService : Service() {
         _isTracking.value = false
         fusedLocationClient.removeLocationUpdates(locationCallback)
         updateNotification("Processing workout...")
-        Log.d(TAG, "── stopTracking: collecting final point before finalize ──")
 
         try {
             fusedLocationClient.lastLocation
                 .addOnSuccessListener { location ->
                     if (location != null) {
-                        Log.d(TAG, "Final point captured: ${location.latitude}, ${location.longitude} (acc=${location.accuracy}m)")
                         handleNewPoint(location.latitude, location.longitude)
                     } else {
-                        Log.w(TAG, "Final point: lastLocation was null — skipping")
                     }
                     serviceScope.launch { finalizeSession() }
                 }
                 .addOnFailureListener { e ->
-                    Log.e(TAG, "Final point fetch failed: ${e.message} — finalizing without it")
                     serviceScope.launch { finalizeSession() }
                 }
         } catch (e: SecurityException) {
-            Log.e(TAG, "Final point: permission missing — finalizing without it")
             serviceScope.launch { finalizeSession() }
         }
     }
@@ -328,7 +315,6 @@ class TrackingService : Service() {
         try {
             fusedLocationClient.requestLocationUpdates(request, locationCallback, Looper.getMainLooper())
         } catch (e: SecurityException) {
-            Log.e(TAG, "Location permission missing: ${e.message}")
         }
     }
 
@@ -338,13 +324,11 @@ class TrackingService : Service() {
 
         if (lastRaw == null) {
             lastRawPoint = newPoint
-            Log.d(TAG, "First point — reference only: $lat, $lng")
             return
         }
 
         val dist = AreaCalculator.haversineDistance(lastRaw.lat, lastRaw.lng, lat, lng)
         if (dist < MIN_POINT_DISTANCE_M) {
-            Log.v(TAG, "Point skipped — too close: ${String.format("%.1f", dist)}m < ${MIN_POINT_DISTANCE_M}m")
             return
         }
 
@@ -363,12 +347,10 @@ class TrackingService : Service() {
                 AreaCalculator.PointDecision.ADD -> {
                     collectedPoints.add(newPoint)
                     lastKeptPoint = newPoint
-                    Log.d(TAG, "Point #${collectedPoints.size} added: ($lat, $lng) dist=${String.format("%.1f", dist)}m total=${String.format("%.0f", totalDistanceM)}m")
                 }
                 AreaCalculator.PointDecision.REPLACE_LAST -> {
                     collectedPoints[collectedPoints.size - 1] = newPoint
                     lastKeptPoint = newPoint
-                    Log.v(TAG, "Point #${collectedPoints.size} replaced (collinear): ($lat, $lng)")
                 }
             }
         }
@@ -406,7 +388,6 @@ class TrackingService : Service() {
         val timeSec = (p2.time - p1.time) / 1000.0
         if (timeSec <= 0) return false
         val speedKmh = (distM / timeSec) * 3.6
-        Log.d(TAG, "Speed check: ${String.format("%.1f", speedKmh)} km/h (limit: ${MAL_SPEED_KMH} km/h)")
         if (speedKmh <= MAL_SPEED_KMH) return false
         if (collectedPoints.size < 5) return false
         val last5 = collectedPoints.takeLast(5)
@@ -416,26 +397,23 @@ class TrackingService : Service() {
                 last5[i-1].lat, last5[i-1].lng, last5[i].lat, last5[i].lng
             )
         }
-        Log.w(TAG, "⚠️ Speed exceeded! ${String.format("%.1f", speedKmh)} km/h, last-5-dist: ${String.format("%.1f", totalDist)}m (threshold: ${MAL_DIST_5_POINTS_M}m)")
         return totalDist > MAL_DIST_5_POINTS_M
     }
 
     private fun terminateAsMalpractice() {
-        Log.e(TAG, "🚨 MALPRACTICE DETECTED — session terminated. Speed exceeded ${MAL_SPEED_KMH} km/h threshold.")
-        _isTracking.value = false
+       _isTracking.value = false
         fusedLocationClient.removeLocationUpdates(locationCallback)
         collectedPoints.clear()
         db.collection(COL_SESSIONS).document(sessionId).delete()
-            .addOnSuccessListener { Log.d(TAG, "Malpractice: session doc deleted") }
-            .addOnFailureListener { Log.e(TAG, "Malpractice: failed to delete session: ${it.message}") }
+            .addOnSuccessListener {}
+            .addOnFailureListener {  }
         auth.currentUser?.uid?.let { uid ->
             db.collection(COL_USERS).document(uid)
                 .collection(COL_USER_STATE).document("data")
                 .set(mapOf("isSessionLive" to false), com.google.firebase.firestore.SetOptions.merge())
-                .addOnSuccessListener { Log.d(TAG, "Malpractice: user state reset") }
+                .addOnSuccessListener {  }
         }
         serviceScope.launch(Dispatchers.Main) {
-            Log.d(TAG, "Sending ACTION_SESSION_TERMINATED broadcast — reason=malpractice")
             sendBroadcast(Intent(ACTION_SESSION_TERMINATED).apply {
                 setPackage(packageName)
                 putExtra(EXTRA_TERMINATION_REASON, "malpractice")
@@ -448,24 +426,19 @@ class TrackingService : Service() {
 
     private fun syncPointsToFirebase() {
         if (collectedPoints.isEmpty()) return
-        Log.d(TAG, "Mid-session sync → ${collectedPoints.size} points to Firestore")
         val pointMaps = collectedPoints.map {
             mapOf("lat" to it.lat, "lng" to it.lng, "time" to it.time)
         }
         db.collection(COL_SESSIONS).document(sessionId)
             .update("points", pointMaps)
-            .addOnSuccessListener { Log.d(TAG, "Mid-session sync OK") }
-            .addOnFailureListener { Log.e(TAG, "Mid-sync failed: ${it.message}") }
     }
 
     // ─── Phase 2: Finalize Session ────────────────────────────────────────────
 
     private suspend fun finalizeSession() {
         val userId = auth.currentUser?.uid ?: return
-        Log.d(TAG, "── finalizeSession ── points: ${collectedPoints.size}, distance: ${String.format("%.1f", totalDistanceM)}m")
 
         if (collectedPoints.size < 4) {
-            Log.w(TAG, "Too few points (${collectedPoints.size}) — session discarded")
             db.collection(COL_SESSIONS).document(sessionId).delete().await()
             db.collection(COL_USERS).document(userId)
                 .collection(COL_USER_STATE).document("data")
@@ -473,7 +446,6 @@ class TrackingService : Service() {
                     com.google.firebase.firestore.SetOptions.merge()).await()
             // Notify UI even when session discarded — fixes tvStatus stuck on "Processing"
             withContext(Dispatchers.Main) {
-                Log.d(TAG, "Sending ACTION_SESSION_TERMINATED broadcast — reason=too_short")
                 sendBroadcast(Intent(ACTION_SESSION_TERMINATED).apply {
                     setPackage(packageName)
                     putExtra(EXTRA_TERMINATION_REASON, "too_short")
@@ -520,19 +492,15 @@ class TrackingService : Service() {
         )
 
         if (!result.hasTerritory) {
-            Log.w(TAG, "No closed loop detected — area = 0. Session saved without territory.")
             saveSessionToFirestore(finalSession, emptyList(), emptyList())
             return
         }
 
         if (result.areaM2 < MIN_TERRITORY_AREA_M2) {
-            Log.w(TAG, "Area too small: ${result.areaM2}m² < ${MIN_TERRITORY_AREA_M2}m² threshold — territory discarded")
             val noTerritorySession = finalSession.copy(area = 0.0, points = emptyList(), geohash = "")
             saveSessionToFirestore(noTerritorySession, emptyList(), emptyList())
             return
         }
-
-        Log.d(TAG, "Territory valid: ${String.format("%.1f", result.areaM2)}m² — proceeding to intersection check")
 
         val newPolygon = AreaCalculator.buildPolygonFromStoredPoints(result.polygonPoints)
         if (newPolygon != null) {
@@ -582,7 +550,6 @@ class TrackingService : Service() {
                                 s.yMin < newSession.yMax
                     }.forEach { allCandidates.add(it) }
             } catch (e: Exception) {
-                Log.e(TAG, "Geohash query failed for prefix $prefix: ${e.message}")
             }
         }
 
@@ -591,7 +558,6 @@ class TrackingService : Service() {
         val ownSessions = allCandidates.filter { it.userId == userId }
         val otherSessions = allCandidates.filter { it.userId != userId }
 
-        Log.d(TAG, "Intersections — own: ${ownSessions.size}, others: ${otherSessions.size}")
 
         // Other users: parallel is fine — each subtract is independent
         val otherResults = withContext(Dispatchers.Default) {
@@ -610,20 +576,16 @@ class TrackingService : Service() {
             for (ownSession in ownSessions) {
                 val existingPolygon = AreaCalculator.buildPolygonFromStoredPoints(ownSession.points)
                 if (existingPolygon == null) {
-                    Log.w(TAG, "Own session ${ownSession.sessionId} has no valid polygon — skipping")
                     continue
                 }
                 if (!existingPolygon.intersects(accumulatedPolygon) && !existingPolygon.touches(accumulatedPolygon)) {
-                    Log.d(TAG, "Own session ${ownSession.sessionId} does not overlap accumulated polygon — skipping")
                     continue
                 }
                 val merged = try {
                     existingPolygon.union(accumulatedPolygon)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Own territory merge failed for ${ownSession.sessionId}: ${e.message}")
                     continue
                 }
-                Log.d(TAG, "Own territory merged: ${ownSession.area}m² + accumulated → ${AreaCalculator.calculateAreaM2(merged)}m²")
                 results.add(BatchOperation(ownSession, merged, isOwnSession = true))
                 accumulatedPolygon = merged  // chain: next merge uses the grown polygon
             }
@@ -677,7 +639,6 @@ class TrackingService : Service() {
 
         val merged = try { existingPolygon.union(newPolygon) }
         catch (e: Exception) {
-            Log.e(TAG, "Own territory merge failed: ${e.message}")
             return null
         }
 
@@ -755,7 +716,6 @@ class TrackingService : Service() {
             batch.set(userGameDataRef, mapOf(
                 "capturedArea" to FieldValue.increment(netNew)
             ), com.google.firebase.firestore.SetOptions.merge())
-            Log.d(TAG, "No overlap — saved new session ${session.sessionId} area=${String.format("%.1f", session.area)}m²")
 
         } else {
             // ── Overlap: merge into one survivor doc ──────────────────────────
@@ -789,12 +749,9 @@ class TrackingService : Service() {
                 "userName" to session.userName,
                 "date"     to session.date
             ))
-            Log.d(TAG, "Survivor: $survivorId area=${String.format("%.1f", finalArea)}m² dist=${String.format("%.1f", totalDistance)}m")
-
             // Delete all absorbed session docs
             for (id in absorbedIds) {
                 batch.delete(db.collection(COL_SESSIONS).document(id))
-                Log.d(TAG, "Absorbed+deleted: $id")
             }
 
             // Remove absorbed IDs from sessions list, keep survivor
@@ -807,8 +764,6 @@ class TrackingService : Service() {
             batch.set(userGameDataRef, mapOf(
                 "capturedArea" to FieldValue.increment(netNew)
             ), com.google.firebase.firestore.SetOptions.merge())
-
-            Log.d(TAG, "capturedArea: finalMerged=${String.format("%.1f", finalArea)}m² sumExisting=${String.format("%.1f", sumExistingOwnArea)}m² netNew=${String.format("%.1f", netNew)}m²")
         }
 
         // Apply other users' territory subtractions (always)
@@ -818,21 +773,16 @@ class TrackingService : Service() {
 
         val committed = commitWithRetry(batch)
         if (committed) {
-            Log.d(TAG, "── Batch committed ── broadcastId=$broadcastSessionId ownMerges=${ownOps.size} otherSubtracts=${otherOps.size}")
-
             // ── F: Update SeasonData + UserGameData after successful commit ──
             updateStatsAfterWorkout(session)
 
             withContext(Dispatchers.Main) {
                 _lastCompletedSessionId.value = broadcastSessionId
-                Log.d(TAG, "Sending ACTION_WORKOUT_COMPLETE broadcast — sessionId=$broadcastSessionId")
                 sendBroadcast(Intent(ACTION_WORKOUT_COMPLETE).apply {
                     putExtra(EXTRA_SESSION_ID, broadcastSessionId)
                     setPackage(packageName)
                 })
             }
-        } else {
-            Log.e(TAG, "Batch commit failed after retries — session data may be lost")
         }
 
         withContext(Dispatchers.Main) { stopSelf() }
@@ -857,7 +807,6 @@ class TrackingService : Service() {
                 batch.update(sessionRef, mapOf("area" to 0.0, "points" to emptyList<Any>()))
                 batch.set(ownerGameRef, mapOf("capturedArea" to FieldValue.increment(-areaBefore)), com.google.firebase.firestore.SetOptions.merge())
                 notifyTerritoryFullyConsumed(op.existingSession.userId, areaBefore)
-                Log.d(TAG, "Territory fully consumed (${areaBefore}m²)")
             }
 
             // ── Case 2: Trimmed — one piece remains ────────────────────────────
@@ -869,7 +818,6 @@ class TrackingService : Service() {
                     batch.update(sessionRef, mapOf("area" to 0.0, "points" to emptyList<Any>()))
                     batch.set(ownerGameRef, mapOf("capturedArea" to FieldValue.increment(-areaBefore)), com.google.firebase.firestore.SetOptions.merge())
                     notifyTerritoryFullyConsumed(op.existingSession.userId, areaBefore)
-                    Log.d(TAG, "Trimmed remainder ${newArea}m² < threshold — deleted")
                 } else {
                     val newPoints = AreaCalculator.extractBoundaryPoints(op.resultGeometry)
                     val env = op.resultGeometry.envelopeInternal
@@ -884,7 +832,6 @@ class TrackingService : Service() {
                     ))
                     batch.set(ownerGameRef, mapOf("capturedArea" to FieldValue.increment(newArea - areaBefore)), com.google.firebase.firestore.SetOptions.merge())
                     notifyTerritoryTrimmed(op.existingSession.userId, areaBefore, newArea)
-                    Log.d(TAG, "Territory trimmed: ${areaBefore}m² → ${newArea}m²")
                 }
             }
 
@@ -911,7 +858,6 @@ class TrackingService : Service() {
                     if (pieceArea < MIN_TERRITORY_AREA_M2) {
                         // Too small — discard this fragment
                         totalDiscardedArea += pieceArea
-                        Log.d(TAG, "Split piece ${pieceArea}m² < threshold — discarded")
                         continue
                     }
 
@@ -932,7 +878,6 @@ class TrackingService : Service() {
                     batch.update(sessionRef, mapOf("area" to 0.0, "points" to emptyList<Any>()))
                     batch.set(ownerGameRef, mapOf("capturedArea" to FieldValue.increment(-areaBefore)), com.google.firebase.firestore.SetOptions.merge())
                     notifyTerritoryFullyConsumed(op.existingSession.userId, areaBefore)
-                    Log.d(TAG, "All split pieces below threshold — territory fully consumed")
                     return
                 }
 
@@ -974,7 +919,6 @@ class TrackingService : Service() {
                     keptPieces     = validPieces.size,
                     discardedArea  = totalDiscardedArea
                 )
-                Log.d(TAG, "Territory split: ${validPieces.size} kept (${totalKeptArea}m²), discarded ${totalDiscardedArea}m²")
             }
         }
     }
@@ -996,10 +940,8 @@ class TrackingService : Service() {
             } catch (e: Exception) {
                 attempt++
                 if (attempt >= maxRetries) {
-                    Log.e(TAG, "Batch commit failed after $maxRetries attempts: ${e.message}")
                     return false
                 }
-                Log.w(TAG, "Batch commit attempt $attempt failed — retrying in ${delayMs}ms: ${e.message}")
                 delay(delayMs)
                 delayMs *= 2  // exponential backoff: 1s → 2s → 4s
             }
@@ -1023,8 +965,6 @@ class TrackingService : Service() {
                 areaM2     = session.area,
                 durationMs = durationMs
             )
-            Log.d(TAG, "SeasonData updated — dist=${session.distance}m area=${session.area}m²")
-
             // Problem 3: capturedArea is now the single source of truth in userGameData.
             // The batch in saveSessionToFirestore already incremented it via FieldValue.increment.
             // We just need to read it back fresh to update the other fields (highestDist etc.)
@@ -1050,17 +990,13 @@ class TrackingService : Service() {
                 ), com.google.firebase.firestore.SetOptions.merge())
                 .await()
             userGameDataManager.clearCache()
-            Log.d(TAG, "UserGameData updated — highestDist=${updatedData.highestDistanceCovered}m area=${updatedData.highestAreaCovered}m²")
-
             // Update streak — uses session.date already formatted as "yyyy-MM-dd"
             userGameDataManager.updateStreakAfterWorkout(session.date)
-            Log.d(TAG, "Streak updated for date=${session.date}")
 
             // N: Check and unlock achievements with latest stats
             checkAndSaveAchievements()
 
         } catch (e: Exception) {
-            Log.e(TAG, "updateStatsAfterWorkout failed: ${e.message}")
         }
     }
 
@@ -1088,10 +1024,8 @@ class TrackingService : Service() {
             if (newlyUnlocked.isNotEmpty()) {
                 val allUnlockedIds = achievementManager.getUnlockedIds(updatedList)
                 userGameDataManager.updateUserAchievements(allUnlockedIds)
-                Log.d(TAG, "Achievements unlocked: ${newlyUnlocked.map { it.title }}")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "checkAndSaveAchievements failed: ${e.message}")
         }
     }
 
@@ -1121,9 +1055,7 @@ class TrackingService : Service() {
                 }
                 _nearbyTerritories.value = nearby
                 sendBroadcast(Intent(ACTION_NEARBY_TERRITORIES_UPDATED).apply { setPackage(packageName) })
-                Log.d(TAG, "Nearby territories: ${nearby.size}")
             }
-            .addOnFailureListener { Log.e(TAG, "Fetch nearby failed: ${it.message}") }
     }
 
     // ─── EC3: Own Past Territories ────────────────────────────────────────────
@@ -1156,9 +1088,7 @@ class TrackingService : Service() {
                 }
                 _ownTerritories.value = own
                 sendBroadcast(Intent(ACTION_OWN_TERRITORIES_UPDATED).apply { setPackage(packageName) })
-                Log.d(TAG, "Own territories nearby: ${own.size}")
             }
-            .addOnFailureListener { Log.e(TAG, "Fetch own territories failed: ${it.message}") }
     }
 
     // ─── B: Zombie Session Cleanup ───────────────────────────────────────────────
@@ -1185,7 +1115,6 @@ class TrackingService : Service() {
             .get()
             .addOnSuccessListener { snapshot ->
                 if (snapshot.isEmpty) return@addOnSuccessListener
-                Log.d(TAG, "Found ${snapshot.size()} zombie session(s) — processing")
 
                 serviceScope.launch {
                     val batch = db.batch()
@@ -1232,29 +1161,24 @@ class TrackingService : Service() {
                                         batch.set(userStateRef, mapOf(
                                             "sessions" to FieldValue.arrayUnion(doc.id)
                                         ), com.google.firebase.firestore.SetOptions.merge())
-                                        Log.d(TAG, "Zombie salvaged: ${doc.id} area=${String.format("%.1f", result.areaM2)}m²")
                                     } else {
                                         // No valid territory — discard
                                         batch.update(doc.reference, mapOf("isLive" to false, "area" to 0.0))
                                         discardedIds.add(doc.id)
-                                        Log.d(TAG, "Zombie discarded (no territory): ${doc.id}")
                                     }
                                 } catch (e: Exception) {
                                     batch.update(doc.reference, mapOf("isLive" to false, "area" to 0.0))
                                     discardedIds.add(doc.id)
-                                    Log.e(TAG, "Zombie salvage failed for ${doc.id}: ${e.message}")
                                 }
                             } else {
                                 // Too few points — discard
                                 batch.update(doc.reference, mapOf("isLive" to false, "area" to 0.0))
                                 discardedIds.add(doc.id)
-                                Log.d(TAG, "Zombie discarded (too few points: ${points.size}): ${doc.id}")
                             }
                         } else {
                             // Old zombie (> 2 hours) — mark dead immediately
                             batch.update(doc.reference, mapOf("isLive" to false, "area" to 0.0))
                             discardedIds.add(doc.id)
-                            Log.d(TAG, "Old zombie killed: ${doc.id} startTime=$startTime")
                         }
                     }
 
@@ -1265,7 +1189,6 @@ class TrackingService : Service() {
                         batch.set(userStateRef, mapOf(
                             "sessions" to FieldValue.arrayRemove(*discardedIds.toTypedArray())
                         ), com.google.firebase.firestore.SetOptions.merge())
-                        Log.d(TAG, "Removed ${discardedIds.size} discarded zombie IDs from sessions[]")
                     }
                     batch.set(userStateRef, stateUpdate,
                         com.google.firebase.firestore.SetOptions.merge())
@@ -1273,7 +1196,6 @@ class TrackingService : Service() {
                     commitWithRetry(batch)
                 }
             }
-            .addOnFailureListener { Log.e(TAG, "Zombie cleanup query failed: ${it.message}") }
     }
 
     // ─── Notification Stubs (implement later) ────────────────────────────────
@@ -1284,7 +1206,6 @@ class TrackingService : Service() {
      */
     private fun notifyTerritoryFullyConsumed(userId: String, lostAreaM2: Double) {
         // TODO: implement push notification
-        Log.d(TAG, "NOTIFY [$userId] territory fully consumed (${lostAreaM2}m²)")
     }
 
     /**
@@ -1293,7 +1214,6 @@ class TrackingService : Service() {
      */
     private fun notifyTerritoryTrimmed(userId: String, beforeM2: Double, afterM2: Double) {
         // TODO: implement push notification
-        Log.d(TAG, "NOTIFY [$userId] territory trimmed ${beforeM2}m² → ${afterM2}m²")
     }
 
     /**
@@ -1307,7 +1227,6 @@ class TrackingService : Service() {
         keptPieces: Int,
         discardedArea: Double
     ) {
-        Log.d(TAG, "NOTIFY [$userId] territory split → $keptPieces pieces kept, ${discardedArea}m² discarded")
     }
 
 

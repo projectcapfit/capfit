@@ -113,30 +113,25 @@ object AreaCalculator {
         totalDistanceM: Double
     ): CalculationResult {
 
-        Log.d(TAG, "Calculating: ${filteredPoints.size} points, distance: $totalDistanceM m")
 
         if (filteredPoints.size < 4) {
-            Log.d(TAG, "Not enough points for territory")
             return emptyResult(totalDistanceM)
         }
 
         // ── Step 1: intersection detection on the FULL original path ──────────
         // Must run before any head/tail trimming so crossing segments are not lost.
         val fullPathIntersections = findSelfIntersectionsSweep(filteredPoints)
-        Log.d(TAG, "Full-path intersections: ${fullPathIntersections.size}")
 
         if (fullPathIntersections.isNotEmpty()) {
             // Path crosses itself — extract every enclosed loop and union them.
             // tryCloseLoop is NOT needed here: the crossing points already define closure.
             val loops = extractLoops(filteredPoints, fullPathIntersections)
-            Log.d(TAG, "Extracted ${loops.size} loops from full-path intersections")
             if (loops.isNotEmpty()) {
                 val unionGeometry = buildUnion(loops)
                 if (unionGeometry != null && !unionGeometry.isEmpty) {
                     val area = calculateAreaM2(unionGeometry)
                     val envelope = unionGeometry.envelopeInternal
                     val boundaryPoints = extractBoundaryPoints(unionGeometry)
-                    Log.d(TAG, "Final area (intersection path): $area m², points: ${boundaryPoints.size}")
                     return CalculationResult(
                         totalDistanceM = totalDistanceM,
                         areaM2 = area,
@@ -149,8 +144,6 @@ object AreaCalculator {
                     )
                 }
             }
-            // Loops extraction failed (e.g. all degenerate) — fall through to tryCloseLoop
-            Log.w(TAG, "Intersection loops extraction yielded nothing — falling back to tryCloseLoop")
         }
 
         // ── Step 2: no crossings on full path → try clean loop closure ────────
@@ -165,21 +158,14 @@ object AreaCalculator {
             // Working points are trimmed — re-run sweep on them too, then near-miss
             val trimmedIntersections = findSelfIntersectionsSweep(workingPoints)
             if (trimmedIntersections.isNotEmpty()) {
-                Log.d(TAG, "Found ${trimmedIntersections.size} intersections on trimmed path")
                 trimmedIntersections
             } else {
                 val nearMiss = findNearMissIntersections(workingPoints)
-                if (nearMiss.isNotEmpty()) {
-                    Log.d(TAG, "Found ${nearMiss.size} near-miss intersections (GPS collinear filter artifact)")
-                }
                 nearMiss
             }
         } else {
             // Path never closed — near-miss is our last hope
             val nearMiss = findNearMissIntersections(workingPoints)
-            if (nearMiss.isNotEmpty()) {
-                Log.d(TAG, "Found ${nearMiss.size} near-miss intersections on open path")
-            }
             nearMiss
         }
 
@@ -188,15 +174,11 @@ object AreaCalculator {
         val unionGeometry = if (intersections.isNotEmpty()) {
             // Trimmed path crosses itself (or near-miss) — extract loops
             val loops = extractLoops(workingPoints, intersections)
-            Log.d(TAG, "Extracted ${loops.size} loops from trimmed-path intersections")
             if (loops.isEmpty()) return emptyResult(totalDistanceM)
             buildUnion(loops)
         } else if (closedPoints != null) {
-            // No self-intersection but path closes on itself — treat whole path as polygon
-            Log.d(TAG, "No self-intersection — using closed loop as polygon directly")
             buildPolygonFromPoints(closedPoints)
         } else {
-            Log.d(TAG, "No closed loops and path did not close — area = 0")
             return emptyResult(totalDistanceM)
         }
 
@@ -205,8 +187,6 @@ object AreaCalculator {
         val area = calculateAreaM2(unionGeometry)
         val envelope = unionGeometry.envelopeInternal
         val boundaryPoints = extractBoundaryPoints(unionGeometry)
-
-        Log.d(TAG, "Final area: $area m², polygon points: ${boundaryPoints.size}")
 
         return CalculationResult(
             totalDistanceM = totalDistanceM,
@@ -401,7 +381,6 @@ object AreaCalculator {
                     // Snap to midpoint of closest approach — this is our synthetic intersection
                     val snapLat = (closestI.lat + closestJ.lat) / 2.0
                     val snapLng = (closestI.lng + closestJ.lng) / 2.0
-                    Log.d(TAG, "Near-miss: seg$i↔seg$j dist=${String.format("%.1f", distM)}m → snapped to ($snapLat, $snapLng)")
                     result.add(Intersection(Coordinate(snapLng, snapLat), i, j))
                 }
             }
@@ -494,16 +473,10 @@ object AreaCalculator {
         }
 
         if (bestI == -1) {
-            Log.d(TAG, "Closure check: no point pair within ${CLOSURE_THRESHOLD_M}m — no loop")
             return null
         }
 
         val loopPoints = points.subList(bestI, bestJ + 1).toMutableList()
-        Log.d(TAG, "Closure check: points[$bestI]→points[$bestJ] dist=${
-            String.format("%.1f", haversineDistance(
-                points[bestI].lat, points[bestI].lng,
-                points[bestJ].lat, points[bestJ].lng
-            ))}m — loop closed (head tail=${bestI} pts, end tail=${points.size - 1 - bestJ} pts)")
 
         // Snap last point to exact coordinates of first point to close ring cleanly
         loopPoints[loopPoints.size - 1] = TrackPoint(
@@ -531,7 +504,6 @@ object AreaCalculator {
             val polygon = geometryFactory.createPolygon(ring)
             if (polygon.isValid) polygon else polygon.buffer(0.0)
         } catch (e: Exception) {
-            Log.e(TAG, "buildPolygonFromPoints failed: ${e.message}")
             null
         }
     }
@@ -594,21 +566,17 @@ object AreaCalculator {
                     if (repaired is Polygon && repaired.isValid && !repaired.isEmpty) {
                         polygon = repaired
                     } else {
-                        Log.w(TAG, "Loop polygon invalid and unrepairable — skipping")
                         continue
                     }
                 }
 
                 if (!polygon.isEmpty) {
                     loops.add(polygon)
-                    Log.d(TAG, "Loop extracted: ${polygon.area} deg² area")
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Loop polygon failed: ${e.message}")
             }
         }
 
-        Log.d(TAG, "extractLoops: ${loops.size} valid loops from ${intersections.size} intersections")
         return loops
     }
 
@@ -622,7 +590,6 @@ object AreaCalculator {
             for (i in 1 until loops.size) union = union.union(loops[i])
             union
         } catch (e: Exception) {
-            Log.e(TAG, "Union failed: ${e.message}")
             loops.maxByOrNull { it.area }
         }
     }
@@ -781,7 +748,6 @@ object AreaCalculator {
             val polygon = geometryFactory.createPolygon(shell, holeRings.toTypedArray())
             if (polygon.isValid) polygon else polygon.buffer(0.0) as? Polygon
         } catch (e: Exception) {
-            Log.e(TAG, "buildPolygonFromStoredPoints failed: ${e.message}")
             null
         }
     }

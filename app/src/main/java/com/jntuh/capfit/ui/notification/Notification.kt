@@ -36,8 +36,6 @@ class Notification : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        Log.v("asasas","Notification screen opened")
-
         binding = ActivityNotificationBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -48,22 +46,17 @@ class Notification : AppCompatActivity() {
 
     private fun setupBackButton() {
         binding.btnBack.setOnClickListener {
-            Log.v("asasas","Back pressed")
             finish()
         }
     }
 
     private fun setupRecycler() {
-        Log.v("asasas","Recycler setup")
-
         adapter = NotificationAdapter(
             notifications = notifications,
             onAcceptClicked = { notif ->
-                Log.v("asasas","Accept clicked for ${notif.id}")
                 acceptFriendRequest(notif)
             },
             onRejectClicked = { notif ->
-                Log.v("asasas","Reject clicked for ${notif.id}")
                 rejectFriendRequest(notif)
             }
         )
@@ -77,11 +70,9 @@ class Notification : AppCompatActivity() {
     private fun listenToNotifications() {
 
         val uid = auth.currentUser?.uid ?: run {
-            Log.v("asasas","listenToNotifications → UID NULL")
             return
         }
 
-        Log.v("asasas","Listening notifications for $uid")
 
         listener = firestore.collection("userGameData")
             .document(uid)
@@ -90,22 +81,17 @@ class Notification : AppCompatActivity() {
             .addSnapshotListener { snap, error ->
 
                 if (error != null) {
-                    Log.v("asasas","Snapshot error ${error.message}")
                     return@addSnapshotListener
                 }
 
                 if (snap == null) {
-                    Log.v("asasas","Snapshot null")
                     return@addSnapshotListener
                 }
-
-                Log.v("asasas","Snapshot received size=${snap.size()}")
 
                 notifications.clear()
 
                 for (doc in snap.documents) {
                     val obj = doc.toObject(AppNotification::class.java)
-                    Log.v("asasas","Notification doc=${doc.id} data=$obj")
                     obj?.let { notifications.add(it) }
                 }
 
@@ -116,7 +102,6 @@ class Notification : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         listener?.remove()
-        Log.v("asasas","Listener removed")
     }
 
     // ---------------- ACCEPT ----------------
@@ -124,16 +109,13 @@ class Notification : AppCompatActivity() {
     private fun acceptFriendRequest(notification: AppNotification) {
 
         val currentUid = auth.currentUser?.uid ?: run {
-            Log.v("asasas","Accept failed → currentUid null")
             return
         }
 
         val fromUid = notification.fromUserId ?: run {
-            Log.v("asasas","Accept failed → fromUid null")
             return
         }
 
-        Log.v("asasas","Accepting friend request from $fromUid to $currentUid")
 
         val currentRef = firestore.collection("userGameData").document(currentUid)
         val fromRef = firestore.collection("userGameData").document(fromUid)
@@ -143,8 +125,6 @@ class Notification : AppCompatActivity() {
             .document(notification.id)
 
         firestore.runBatch { batch ->
-
-            Log.v("asasas","Updating friendsList both users")
 
             batch.set(
                 currentRef,
@@ -166,12 +146,8 @@ class Notification : AppCompatActivity() {
             ))
         }
             .addOnSuccessListener {
-                Log.v("asasas","Friend added successfully")
                 userGameViewModel.loadFriends()
                 sendFriendAcceptedNotification(fromUid)
-            }
-            .addOnFailureListener {
-                Log.v("asasas","Batch failed ${it.message}")
             }
     }
 
@@ -181,7 +157,6 @@ class Notification : AppCompatActivity() {
 
         val currentUid = auth.currentUser?.uid ?: return
 
-        Log.v("asasas","Rejecting request ${notification.id}")
 
         val notifRef = firestore.collection("userGameData")
             .document(currentUid)
@@ -193,11 +168,7 @@ class Notification : AppCompatActivity() {
                 "actionStatus" to "REJECTED",
                 "isRead" to true
             )
-        ).addOnSuccessListener {
-            Log.v("asasas","Request rejected")
-        }.addOnFailureListener {
-            Log.v("asasas","Reject failed ${it.message}")
-        }
+        )
     }
 
     // ---------------- SEND ACCEPTED NOTIF ----------------
@@ -206,7 +177,6 @@ class Notification : AppCompatActivity() {
 
         val currentUid = auth.currentUser?.uid ?: return
 
-        Log.v("asasas","Sending accepted notification to $receiverUid")
 
         val notifRef = firestore.collection("userGameData")
             .document(receiverUid)
@@ -225,12 +195,6 @@ class Notification : AppCompatActivity() {
         )
 
         notifRef.set(payload)
-            .addOnSuccessListener {
-                Log.v("asasas","Accepted notification sent")
-            }
-            .addOnFailureListener {
-                Log.v("asasas","Accepted notification failed ${it.message}")
-            }
     }
 
     // ---------------- MARK READ ----------------
@@ -239,7 +203,6 @@ class Notification : AppCompatActivity() {
 
         val uid = auth.currentUser?.uid ?: return
 
-        Log.v("asasas","Marking all notifications read")
 
         val notifRef = firestore.collection("userGameData")
             .document(uid)
@@ -255,7 +218,6 @@ class Notification : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        Log.v("asasas","Notification screen resumed")
         markAllAsRead()
     }
 }

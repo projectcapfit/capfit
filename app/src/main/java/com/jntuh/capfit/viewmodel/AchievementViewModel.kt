@@ -50,7 +50,6 @@ class AchievementViewModel @Inject constructor(
                 if (savedIds.contains(a.id)) a.copy(isUnlocked = true) else a
             }
 
-            Log.d("asasas", "Achievements loaded: ${updated.size}, unlocked: ${updated.count { it.isUnlocked }}")
             _achievements.value = updated
         }
     }
@@ -79,7 +78,6 @@ class AchievementViewModel @Inject constructor(
             val newlyUnlocked = achievementManager.getNewlyUnlockedAchievements(oldList, updatedList)
 
             if (newlyUnlocked.isNotEmpty()) {
-                Log.d("asasas", "Newly unlocked: ${newlyUnlocked.map { it.title }}")
                 val allUnlockedIds = achievementManager.getUnlockedIds(updatedList)
                 userGameDataManager.updateUserAchievements(allUnlockedIds)
                 _newlyUnlocked.value = newlyUnlocked

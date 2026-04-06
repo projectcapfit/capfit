@@ -18,6 +18,8 @@ class SeasonDataManager @Inject constructor(
 
     private var cachedSeasonList: MutableList<SeasonData>? = null
 
+    public var seasonChanged : Boolean = false
+
     private fun seasonsCollection() =
         db.collection("users")
             .document(firebaseAuth.currentUser!!.uid)
@@ -41,26 +43,22 @@ class SeasonDataManager @Inject constructor(
 
         return try {
 
-            Log.d("asasas" , "From SeasonDataManager Trying to get all seasons")
             val snapshot = seasonsCollection()
                 .orderBy("seasonYear", Query.Direction.DESCENDING)
                 .orderBy("seasonMonth", Query.Direction.DESCENDING)
                 .get()
                 .await()
 
-            Log.d("asasas" , "From SeasonDataManager Trying to get all seasons Snap ${snapshot.toString()}")
             val list = snapshot.documents.mapNotNull {
                 it.toObject(SeasonData::class.java)
             }.toMutableList()
 
-            Log.d("asasas" , "From SeasonDataManager Trying to get all seasons List ${list.toString()}")
             cachedSeasonList = list
             list
         } catch (e: Exception) {
             e.printStackTrace()
 
-            Log.d("asasas" , "From SeasonDataManager Trying to get all seasons Failed in getAllSeasons ${e.toString()}")
-            emptyList()
+             emptyList()
         }
     }
 
@@ -132,6 +130,7 @@ class SeasonDataManager @Inject constructor(
                 // New season doc doesn't exist — this is either the user's very first season
                 // or they skipped 1+ months. In both cases we reset territories so the
                 // leaderboard starts fresh.
+                seasonChanged = true
                 val uid = firebaseAuth.currentUser!!.uid
                 clearTerritoriesAndSessionState(uid)
 
@@ -209,11 +208,8 @@ class SeasonDataManager @Inject constructor(
                 .set(mapOf("capturedArea" to 0.0), com.google.firebase.firestore.SetOptions.merge())
                 .await()
 
-            android.util.Log.d("SeasonDataManager",
-                "Season reset for $uid — deleted ${sessionIds.size} sessions, cleared capturedArea")
 
         } catch (e: Exception) {
-            android.util.Log.e("SeasonDataManager", "clearTerritoriesAndSessionState failed: ${e.message}")
             e.printStackTrace()
         }
     }

@@ -27,7 +27,6 @@ class SeasonViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-
     init {
         loadInitialData()
     }
@@ -37,7 +36,6 @@ class SeasonViewModel @Inject constructor(
             _loading.value = true
 
             try {
-                // Repository now handles create-if-not-exist logic
                 val current = seasonManager.getOrCreateCurrentSeason()
                 _currentSeason.value = current
 
@@ -50,6 +48,15 @@ class SeasonViewModel @Inject constructor(
 
             _loading.value = false
         }
+    }
+
+    fun seasonChange(): Boolean {
+        if (seasonManager.seasonChanged){
+            seasonManager.seasonChanged = false
+            return true
+        }
+        return false
+
     }
 
     fun refreshSeasons() {
@@ -84,8 +91,6 @@ class SeasonViewModel @Inject constructor(
         }
     }
 
-    // Directly fetches current season from Firestore — bypasses list cache
-    // Use this in onResume() after a workout to get latest stats immediately
     fun refreshCurrentSeason() {
         viewModelScope.launch {
             try {
@@ -95,6 +100,28 @@ class SeasonViewModel @Inject constructor(
             } catch (e: Exception) {
                 _error.value = e.message
             }
+        }
+    }
+
+    fun updateCurrentSeasonRank(rank: Int) {
+        viewModelScope.launch {
+            _loading.value = true
+            _error.value = null
+
+            val current = _currentSeason.value
+            if (current != null) {
+                val updatedSeason = current.copy(seasonRank = rank)
+                val success = seasonManager.updateSeason(updatedSeason)
+
+                if (success) {
+                    _currentSeason.value = updatedSeason
+                } else {
+                    _error.value = "Failed to update current season's rank"
+                }
+            } else {
+                _error.value = "No current season available to update rank."
+            }
+            _loading.value = false
         }
     }
 

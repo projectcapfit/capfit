@@ -15,7 +15,6 @@
 
 
     <color name="green">#4CAF50</color>
-    <color name="white">#FFFFFF</color>
 
     <color name="ach_primary">#A7E6A3</color>
     <color name="ach_primary_light">#C9F7C5</color>
@@ -41,4 +40,10 @@
     <color name="green_700">#388E3C</color>
 
     <color name="neon_green">#00FF00</color>
+
+    <color name="dialog_bg">#1E1E2E</color>
+    <color name="primary">#4CAF50</color>
+    <color name="white">#FFFFFF</color>
+    <color name="gray_text">#B0B0C3</color>
+    <color name="divider">#2A2A3C</color>
 </resources>

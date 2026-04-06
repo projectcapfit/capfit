@@ -28,18 +28,14 @@ class UserGameDataManager @Inject constructor(
                 .document(uid)
                 .get()
                 .await()
-
-            Log.d("asasas", "UserGameDataManager data ${doc}")
             val data = doc.toObject(UserGameData::class.java) ?: UserGameData(uid = uid)
             cachedUserGameData = data
 
-            Log.d("asasas", "UserGameDataManager data ${data}")
             data
 
         } catch (e: Exception) {
             e.printStackTrace()
 
-            Log.d("asasas", "UserGameDataManager error part")
             UserGameData(uid = uid)
         }
     }
@@ -212,11 +208,6 @@ class UserGameDataManager @Inject constructor(
                 .get()
                 .await()
 
-//            Log.d("asasas", "Docs size = ${snap.size()}")
-//            snap.documents.forEach {
-//                Log.d("asasas", "DocId=${it.id} data=${it.data}")
-//            }
-
 
             resultList.addAll(
                 snap.toObjects(UserGameData::class.java)
@@ -229,7 +220,6 @@ class UserGameDataManager @Inject constructor(
 
         val senderUid = firebaseAuth.currentUser?.uid ?: return
 
-        Log.v("asasas", "Sending friend request to $receiverUid from userGameDataManager")
 
         try {
 
@@ -250,8 +240,6 @@ class UserGameDataManager @Inject constructor(
                 .collection("notifications")
                 .document()
 
-            Log.d("asasas",
-                "Writing to: userGameData/$receiverUid/notifications/${notifRef.id}")
             val payload = hashMapOf(
                 "id" to notifRef.id,
                 "type" to NotificationType.FRIEND_REQUEST.name,
@@ -270,7 +258,6 @@ class UserGameDataManager @Inject constructor(
 
         }
         catch (e: Exception) {
-            Log.d("asasas" , e.toString())
         }
     }
 

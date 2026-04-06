@@ -77,22 +77,12 @@ class ProfileActivity : AppCompatActivity() {
                     }
                 }
 
-                launch {
-                    viewModel.error.collect { error ->
-                        error?.let {
-                            Toast.makeText(this@ProfileActivity, it, Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-
 
                 launch {
                     seasonViewModel.seasons.collect { data ->
                         data?.let { bindSeasonData(it) }
                     }
                 }
-
-
             }
         }
     }
@@ -131,8 +121,6 @@ class ProfileActivity : AppCompatActivity() {
 
 
     private fun bindSeasonData(data: List<SeasonData>){
-        Log.d("asasas" , "From profile.kt season data ${data.toString()}")
-        // seasons
         setupSeasonList(data ?: emptyList())
     }
 
@@ -140,9 +128,16 @@ class ProfileActivity : AppCompatActivity() {
         seasonAdapter = SeasonAdapter(seasons)
 
         binding.rvSeasons.apply {
+
+            isNestedScrollingEnabled = false
+            setHasFixedSize(false)
             layoutManager = LinearLayoutManager(this@ProfileActivity)
             adapter = seasonAdapter
-            setHasFixedSize(true)
+
+        }
+
+        binding.rvSeasons.post {
+            binding.rvSeasons.requestLayout()
         }
     }
 

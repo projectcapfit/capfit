@@ -106,7 +106,6 @@ class SignUp : AppCompatActivity() {
                 )
                 handleSignIn(result.credential)
             } catch (e: GetCredentialException) {
-                Log.e(TAG, "Google signup failed: ${e.localizedMessage}")
             }
         }
     }
@@ -132,7 +131,6 @@ class SignUp : AppCompatActivity() {
 
                 val prefs = getSharedPreferences("UserData", MODE_PRIVATE)
                 prefs.edit().putString("googlePhoto", firebasePhotoUrl).apply()
-                Log.d("PHOTO_SAVE", "Saved Google Photo: $firebasePhotoUrl")
                 userViewModel.loadUser()
                 updateUI()
             } else {

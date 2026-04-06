@@ -51,7 +51,6 @@ class AchievementsFragment : Fragment() {
 
                 binding.progressBar.progress = progressPercent
 
-                Log.d("ACH_FRAG", "Achievements received = ${list.size}")
             }
         }
 
