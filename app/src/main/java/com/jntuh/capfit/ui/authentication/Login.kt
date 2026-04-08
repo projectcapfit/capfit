@@ -1,6 +1,7 @@
 package com.jntuh.capfit.ui.authentication
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -9,6 +10,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.credentials.Credential
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
@@ -22,6 +24,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.firestore
 import com.jntuh.capfit.R
+import android.view.View
 import com.jntuh.capfit.databinding.ActivityLoginBinding
 import com.jntuh.capfit.ui.home.HomePage
 import com.jntuh.capfit.ui.profile.PhoneNumber
@@ -44,19 +47,18 @@ class Login : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+
+        window.statusBarColor = Color.TRANSPARENT
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
+        window.decorView.systemUiVisibility =
+            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+
+
 
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
-            view.setPadding(
-                insets.getInsets(WindowInsetsCompat.Type.systemBars()).left,
-                insets.getInsets(WindowInsetsCompat.Type.systemBars()).top,
-                insets.getInsets(WindowInsetsCompat.Type.systemBars()).right,
-                insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
-            )
-            insets
-        }
+
 
         binding.forgotPassword.setOnClickListener {
             startActivity(Intent(this@Login , ForgotPassword::class.java))

@@ -133,7 +133,7 @@ class SeasonDataManager @Inject constructor(
                 seasonChanged = true
                 val uid = firebaseAuth.currentUser!!.uid
                 clearTerritoriesAndSessionState(uid)
-
+                deleteOldNotifications()
                 val newSeason = SeasonData(
                     uid = uid,
                     seasonYear = year,
@@ -160,6 +160,43 @@ class SeasonDataManager @Inject constructor(
         }
     }
 
+    suspend fun deleteOldNotifications() {
+        try {
+            val uid = firebaseAuth.currentUser?.uid ?: return
+
+            val notificationsRef = db.collection("userGameData")
+                .document(uid)
+                .collection("notifications")
+
+            val snapshot = notificationsRef
+                .orderBy("timestamp")
+                .limit(50)
+                .get()
+                .await()
+            if (snapshot.isEmpty) return
+
+            val batch = db.batch()
+            var deleteCount = 0
+
+            for (doc in snapshot.documents) {
+                val isRead = doc.getBoolean("isRead") ?: false
+                val status = doc.getString("actionStatus") ?: "PENDING"
+
+                if (isRead || status != "PENDING") {
+                    batch.delete(doc.reference)
+                    deleteCount++
+                }
+            }
+
+            if (deleteCount > 0) {
+                batch.commit().await()
+                Log.d("Notifications", "Deleted $deleteCount notifications")
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
     /**
      * Problem 2: Called when a new season starts (including after skipped months).
      * Clears:

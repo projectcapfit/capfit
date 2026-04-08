@@ -123,9 +123,12 @@ class LeaderboardViewModel @Inject constructor(
 
                 // Include myself in the friends leaderboard
                 allUsers.add(myData)
+                val sorted = allUsers
+                    .sortedWith(
+                        compareByDescending<UserGameData> { it.capturedArea }
+                            .thenBy { it.userName.lowercase() }
+                    )
 
-                val sorted = allUsers.sortedByDescending { it.capturedArea }
-                    .filter { it.capturedArea > 0.0 }
                 val ranked = sorted.mapIndexed { i, u -> u to (i + 1) }
                 _leaderboard.value = ranked
 

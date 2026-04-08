@@ -66,8 +66,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     // Map overlay layers — kept separate so each can be updated independently
     private var currentTrailPolyline: Polyline? = null
-    private val myTerritoryPolygons = mutableListOf<com.google.android.gms.maps.model.Polygon>()  // EC3: own = blue
+    private val myTerritoryPolygons = mutableListOf<com.google.android.gms.maps.model.Polygon>()  // EC3: own territories
     private val nearbyPolygons = mutableListOf<com.google.android.gms.maps.model.Polygon>()       // others = unique colors
+    private val myTerritoryNameMarkers = mutableListOf<Marker>()  // Text labels for own territories
+    private val otherTerritoryNameMarkers = mutableListOf<Marker>()  // Text labels for others' territories
+
+    // User's favorite color from userGameData (used for own territories)
+    private var myFavoriteColor: String = "#2196F3"  // Default blue if not loaded yet
 
     // ─── UI ───────────────────────────────────────────────────────────────────
     private lateinit var btnStart: FloatingActionButton
@@ -153,14 +158,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_maps)
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        androidx.core.view.WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
+        window.decorView.systemUiVisibility =
+            android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+
+
+
+        setContentView(R.layout.activity_maps)
 
         setupUI()
         requestLocationPermission()
@@ -319,8 +325,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 .lastLocation
                 .addOnSuccessListener { location ->
                     if (location == null) {
-                        // lastLocation is null when GPS hasn't been used yet since reboot.
-                        // Fall back to requesting a fresh current location.
                         requestFreshLocationAndJump()
                         return@addOnSuccessListener
                     }
@@ -357,12 +361,32 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         if (!::googleMap.isInitialized) return
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 17f))
         isFirstLocation = false
+
+        // Fetch user's favorite color before loading territories
+        fetchUserFavoriteColor()
+
         val service = trackingService
         if (service != null) {
             service.fetchNearbyForLocation(lat, lng)
         } else {
             fetchAllTerritoriesForLocation(lat, lng)
         }
+    }
+
+    private fun fetchUserFavoriteColor() {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        FirebaseFirestore.getInstance()
+            .collection("userGameData")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { doc ->
+                if (doc.exists()) {
+                    val color = doc.getString("favoriteColor")
+                    if (color != null && color.isNotEmpty()) {
+                        myFavoriteColor = color
+                    }
+                }
+            }
     }
 
     // ─── Service Binding ──────────────────────────────────────────────────────
@@ -418,12 +442,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         hideStatsSheet()
         currentTrailPolyline?.remove()
         currentTrailPolyline = null
+        Toast.makeText(this, "Make a loop to capture territory!", Toast.LENGTH_SHORT).show()
     }
 
     private fun stopWorkout() {
         trackingService?.stopTracking()
         btnStop.isEnabled = false
         tvStatusPill.text = "Processing..."
+        Toast.makeText(this, "Calculating your territory...", Toast.LENGTH_SHORT).show()
     }
 
     // ─── Camera: First Location During Workout ────────────────────────────────
@@ -460,7 +486,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     // ─── EC3: Draw Own Past Territories (blue, same as active workout color) ──
 
     /**
-     * EC3: Draws the current user's own past territories in blue.
+     * EC3: Draws the current user's own past territories using their favoriteColor.
      * Distinct from other users (who get unique hash-derived colors).
      * Shown both before workout starts and after workout completes.
      *
@@ -471,32 +497,64 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         lifecycleScope.launch {
             val renderData = withContext(Dispatchers.Default) {
+                // Parse user's favorite color
+                val userColor = try {
+                    Color.parseColor(myFavoriteColor)
+                } catch (e: Exception) {
+                    Color.parseColor("#2196F3")  // Fallback to blue
+                }
+                val fillColor = Color.argb(80, Color.red(userColor), Color.green(userColor), Color.blue(userColor))
+
                 sessions
                     .filter { it.area > 0.0 && it.points.isNotEmpty() }
                     .flatMap { session ->
-                        splitPolygonPoints(session.points).filter { it.outerRing.size >= 3 }
+                        val polygons = splitPolygonPoints(session.points).filter { it.outerRing.size >= 3 }
+                        // Pair each polygon with the session's userName for labeling
+                        polygons.map { pd -> Triple(pd, session.userName, session.points) }
+                    }
+                    .map { (pd, userName, points) ->
+                        // Calculate center for name label
+                        val centerLat = pd.outerRing.map { it.latitude }.average()
+                        val centerLng = pd.outerRing.map { it.longitude }.average()
+                        PolygonRenderData(pd, fillColor, userColor, userName, centerLat, centerLng)
                     }
             }
 
             myTerritoryPolygons.forEach { it.remove() }
             myTerritoryPolygons.clear()
+            myTerritoryNameMarkers.forEach { it.remove() }
+            myTerritoryNameMarkers.clear()
 
             for (data in renderData) {
                 val opts = PolygonOptions()
-                    .addAll(data.outerRing)
-                    .fillColor(Color.argb(80, 33, 150, 243))
-                    .strokeColor(Color.parseColor("#2196F3"))
+                    .addAll(data.polygonData.outerRing)
+                    .fillColor(data.fillColor)
+                    .strokeColor(data.strokeColor)
                     .strokeWidth(3f)
-                data.holes.forEach { hole -> opts.addHole(hole) }  // holes = cutouts
+                data.polygonData.holes.forEach { hole -> opts.addHole(hole) }
                 myTerritoryPolygons.add(googleMap.addPolygon(opts))
+
+                // Add name label at polygon center
+                addTerritoryNameMarker(data.userName, data.centerLat, data.centerLng, isOwnTerritory = true)
             }
         }
     }
+
+    // Helper data class for polygon rendering with color and label info
+    private data class PolygonRenderData(
+        val polygonData: PolygonData,
+        val fillColor: Int,
+        val strokeColor: Int,
+        val userName: String,
+        val centerLat: Double,
+        val centerLng: Double
+    )
 
     // ─── Draw Others' Territories (unique color per user) ────────────────────
 
     /**
      * Draws other users' nearby territories, each in a unique color derived from userId.
+     * Also adds userName labels at the center of each territory.
      * O7: Data preparation on background thread.
      */
     private fun drawOthersTerritories(territories: List<TrackingSession>) {
@@ -511,21 +569,67 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                         val fill  = Color.argb(60, Color.red(color), Color.green(color), Color.blue(color))
                         splitPolygonPoints(session.points)
                             .filter { it.outerRing.size >= 3 }
-                            .map { pd -> Triple(pd, fill, color) }
+                            .map { pd ->
+                                val centerLat = pd.outerRing.map { it.latitude }.average()
+                                val centerLng = pd.outerRing.map { it.longitude }.average()
+                                QuadData(pd, fill, color, session.userName, centerLat, centerLng)
+                            }
                     }
             }
 
             nearbyPolygons.forEach { it.remove() }
             nearbyPolygons.clear()
+            otherTerritoryNameMarkers.forEach { it.remove() }
+            otherTerritoryNameMarkers.clear()
 
-            for ((pd, fill, stroke) in renderData) {
+            for (data in renderData) {
                 val opts = PolygonOptions()
-                    .addAll(pd.outerRing)
-                    .fillColor(fill)
-                    .strokeColor(stroke)
+                    .addAll(data.pd.outerRing)
+                    .fillColor(data.fill)
+                    .strokeColor(data.stroke)
                     .strokeWidth(2f)
-                pd.holes.forEach { hole -> opts.addHole(hole) }  // holes = cutouts
+                data.pd.holes.forEach { hole -> opts.addHole(hole) }  // holes = cutouts
                 nearbyPolygons.add(googleMap.addPolygon(opts))
+
+                // Add name label at polygon center
+                addTerritoryNameMarker(data.userName, data.centerLat, data.centerLng, isOwnTerritory = false)
+            }
+        }
+    }
+
+    // Helper data class for others' territories with label info
+    private data class QuadData(
+        val pd: PolygonData,
+        val fill: Int,
+        val stroke: Int,
+        val userName: String,
+        val centerLat: Double,
+        val centerLng: Double
+    )
+
+    /**
+     * Adds a text marker showing the userName at the center of a territory polygon.
+     * Uses a transparent marker with only the title text visible.
+     * @param isOwnTerritory true for own territories, false for others' territories
+     */
+    private fun addTerritoryNameMarker(userName: String, lat: Double, lng: Double, isOwnTerritory: Boolean) {
+        if (!::googleMap.isInitialized) return
+
+        val marker = googleMap.addMarker(
+            MarkerOptions()
+                .position(LatLng(lat, lng))
+                .title(userName)
+                .anchor(0.5f, 0.5f)  // Center the marker
+                .alpha(0f)  // Make marker icon transparent, only title shows
+                .flat(true)  // Marker doesn't tilt with map
+        )
+
+        marker?.showInfoWindow()  // Auto-show the username label
+        if (marker != null) {
+            if (isOwnTerritory) {
+                myTerritoryNameMarkers.add(marker)
+            } else {
+                otherTerritoryNameMarkers.add(marker)
             }
         }
     }
@@ -580,6 +684,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 runOnUiThread {
                     resetUIAfterWorkout(distance, area, durationMs)
 
+                    if (area <= 0) {
+                        Toast.makeText(this, "No territory — try making a loop!", Toast.LENGTH_SHORT).show()
+                    }
 
                     val centerLat = if (yMin != 0.0 || yMax != 0.0) (yMin + yMax) / 2
                     else googleMap.cameraPosition.target.latitude
@@ -683,6 +790,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 drawOwnTerritories(own)
                 drawOthersTerritories(others)
             }
+            .addOnFailureListener { }
     }
 
     // ─── Session Terminated ───────────────────────────────────────────────────
@@ -699,6 +807,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             when (reason) {
                 "malpractice" -> {
                     Toast.makeText(this, "🚨 Speed limit exceeded! Session deleted.", Toast.LENGTH_SHORT).show()
+                }
+                "Mock Tracking" -> {
+                    Toast.makeText(this, "Location Issue Detected. Please turn off Mock Location or Third party Location Apps", Toast.LENGTH_SHORT).show()
+
                 }
                 "too_short" -> {
                     Toast.makeText(this, "Not enough points recorded. Walk longer next time!", Toast.LENGTH_SHORT).show()

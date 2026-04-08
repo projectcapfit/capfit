@@ -9,16 +9,13 @@
         android:layout_height="wrap_content"
         android:layout_margin="12dp"
         app:cardCornerRadius="20dp"
-        app:cardElevation="2dp"
-        app:cardMaxElevation="4dp"
-        app:strokeColor="#F0F0F0"
-        android:background="@color/my_white"
-        app:strokeWidth="1dp">
+        app:cardElevation="3dp"
+        app:backgroundTint="@null"
+        app:strokeWidth="0dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/my_white"
             android:padding="16dp">
 
             <FrameLayout

@@ -40,9 +40,9 @@ class LeaderboardAdapter(
             intent.putExtra("user_game_data", user)
             holder.itemView.context.startActivity(intent)
         }
-        // Rank label
+
         holder.tvRank.text = "#$rank"
-        // Name — bold + highlight if current user
+
         holder.tvName.text = if (isMe) "${user.userName} (You)" else user.userName
 
         holder.tvName.setTextColor(
@@ -55,7 +55,6 @@ class LeaderboardAdapter(
         else
             String.format("%.0f m²", area)
 
-        // Medal icon for top 3
         when (rank) {
             1 -> { holder.ivMedal.visibility = View.VISIBLE; holder.ivMedal.setImageResource(R.drawable.ic_medal_gold) }
             2 -> { holder.ivMedal.visibility = View.VISIBLE; holder.ivMedal.setImageResource(R.drawable.ic_medal_silver) }
@@ -63,7 +62,6 @@ class LeaderboardAdapter(
             else -> holder.ivMedal.visibility = View.GONE
         }
 
-        // Highlight row if current user
         holder.itemView.setBackgroundColor(
             if (isMe) Color.parseColor("#F0F9E0") else Color.WHITE
         )

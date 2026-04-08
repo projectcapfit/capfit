@@ -30,7 +30,7 @@ class NotificationAdapter(
         val notif = notifications[position]
         val b = holder.binding
 
-        b.imgIcon.setImageResource(R.drawable.ic_calories)
+        b.imgIcon.setImageResource(R.drawable.ic_friend)
 
         b.tvTitle.text = notif.title
 

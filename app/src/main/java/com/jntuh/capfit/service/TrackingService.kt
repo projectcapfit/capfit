@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.model.LatLng
@@ -34,17 +35,6 @@ import kotlinx.coroutines.tasks.await
 import org.locationtech.jts.geom.*
 import javax.inject.Inject
 
-/**
- * TrackingService
- *
- * Edge cases handled:
- *  EC1. Same user overlapping own territory → merge (union) own sessions, no double counting
- *  EC2. Nearby territories fetched on app open (via fetchNearbyForLocation public function)
- *  EC3. Own past territories shown on map (separate query, drawn in distinct blue)
- *  EC4. capturedArea correctly updated for own territory merges
- *  EC5. Stale isLive sessions cleaned up on service start
- *  EC6. Zero-area sessions filtered out everywhere
- */
 @AndroidEntryPoint
 class TrackingService : Service() {
 
@@ -72,15 +62,8 @@ class TrackingService : Service() {
         private const val GPS_ACCURACY_THRESHOLD_M = 20f
         private const val NEARBY_RADIUS_DEG = 0.01
 
-        // Throttle nearby territory fetches — no need to query every GPS point
         private const val NEARBY_FETCH_INTERVAL_MS = 60_000L  // every 60s during workout
 
-        /**
-         * Minimum territory area in m² to be worth keeping.
-         * Pieces smaller than this after a split/trim are deleted — too small to recapture.
-         * Based on minimum meaningful loop (~4 GPS points, ~72m perimeter ≈ 324m² square).
-         * 100m² gives a comfortable margin while removing obvious slivers.
-         */
         private const val MIN_TERRITORY_AREA_M2 = 100.0
 
         const val COL_SESSIONS = "sessions"
@@ -118,6 +101,9 @@ class TrackingService : Service() {
 
     private val _ownTerritories = MutableStateFlow<List<TrackingSession>>(emptyList())
     val ownTerritories: StateFlow<List<TrackingSession>> = _ownTerritories
+
+    private val _event = MutableStateFlow<String?>(null)
+    val event: StateFlow<String?> = _event
 
     // ─── Internal Session State ───────────────────────────────────────────────
     private val collectedPoints = mutableListOf<TrackPoint>()
@@ -295,6 +281,32 @@ class TrackingService : Service() {
             override fun onLocationResult(result: LocationResult) {
                 val location = result.lastLocation ?: return
                 if (location.accuracy > GPS_ACCURACY_THRESHOLD_M) return
+
+                if(location.isFromMockProvider){
+                    if (_isTracking.value){
+
+                        _isTracking.value = false
+                        fusedLocationClient.removeLocationUpdates(locationCallback)
+                        collectedPoints.clear()
+                        db.collection(COL_SESSIONS).document(sessionId).delete()
+                            .addOnSuccessListener {}
+                            .addOnFailureListener {  }
+                        auth.currentUser?.uid?.let { uid ->
+                            db.collection(COL_USERS).document(uid)
+                                .collection(COL_USER_STATE).document("data")
+                                .set(mapOf("isSessionLive" to false), com.google.firebase.firestore.SetOptions.merge())
+                                .addOnSuccessListener {  }
+                        }
+                        serviceScope.launch(Dispatchers.Main) {
+                            sendBroadcast(Intent(ACTION_SESSION_TERMINATED).apply {
+                                setPackage(packageName)
+                                putExtra(EXTRA_TERMINATION_REASON, "Mock Tracking")
+                            })
+                            stopSelf()
+                        }
+                    }
+                    return
+                }
 
                 val latLng = LatLng(location.latitude, location.longitude)
                 _currentLocation.value = latLng

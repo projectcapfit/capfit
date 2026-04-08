@@ -13,12 +13,18 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.animation.OvershootInterpolator
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.toColorInt
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
@@ -26,6 +32,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jntuh.capfit.R
 import com.jntuh.capfit.adapter.WorkoutAdapter
+import com.jntuh.capfit.data.Achievement
 import com.jntuh.capfit.data.TrackingSession
 import com.jntuh.capfit.databinding.ActivityHomeChildBinding
 import com.jntuh.capfit.ui.Account.MyAccount
@@ -36,6 +43,7 @@ import com.jntuh.capfit.ui.friends.Friends
 import com.jntuh.capfit.ui.notification.Notification
 import com.jntuh.capfit.ui.profile.ProfileActivity
 import com.jntuh.capfit.ui.tracking.MapsActivity
+import com.jntuh.capfit.viewmodel.AchievementViewModel
 import com.jntuh.capfit.viewmodel.SeasonViewModel
 import com.jntuh.capfit.viewmodel.UserGameDataViewModel
 import com.jntuh.capfit.viewmodel.UserViewModel
@@ -46,6 +54,9 @@ import java.text.SimpleDateFormat
 import javax.inject.Inject
 import kotlin.math.absoluteValue
 import java.util.Locale
+import android.app.Dialog
+import android.os.Handler
+import android.os.Looper
 
 @AndroidEntryPoint
 class HomePage : BaseActivity() {
@@ -59,17 +70,22 @@ class HomePage : BaseActivity() {
     private val userViewModel: UserViewModel by viewModels()
     private val userGameViewModel: UserGameDataViewModel by viewModels()
     private val seasonViewModel: SeasonViewModel by viewModels()
+    private val achievementViewModel : AchievementViewModel by viewModels()
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setChildLayout(R.layout.activity_home_child)
-        window.statusBarColor = android.graphics.Color.TRANSPARENT
+
+        window.statusBarColor = Color.TRANSPARENT
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
         window.decorView.systemUiVisibility =
             View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
 
         binding = ActivityHomeChildBinding.bind(baseBinding.childContainer.getChildAt(0))
+
         binding.menuButton.setOnClickListener { openDrawer() }
 
         baseBinding.signOut.setOnClickListener {
@@ -86,10 +102,6 @@ class HomePage : BaseActivity() {
 
         baseBinding.gotoProfile.setOnClickListener {
             startActivity(Intent(this, ProfileActivity::class.java))
-        }
-
-        baseBinding.goToDashboard.setOnClickListener {
-            startActivity(Intent(this, DashBoard::class.java))
         }
 
         baseBinding.goToLeaderboard.setOnClickListener {
@@ -121,12 +133,75 @@ class HomePage : BaseActivity() {
             delay(500)
             setupRecentActivity()
         }
+
+        lifecycleScope.launchWhenStarted {
+            achievementViewModel.newlyUnlocked.collect { list ->
+                if (list.isNotEmpty()) {
+
+                    // Show one by one (important)
+                    showAchievementsSequentially(list)
+                }
+            }
+        }
     }
 
     private fun temp(){
         binding.mapButton.setOnClickListener {
             startActivity(Intent(this, MapsActivity::class.java))
         }
+    }
+
+    fun showAchievementsSequentially(list: List<Achievement>) {
+        if (list.isEmpty()) return
+
+        var index = 0
+
+        fun showNext() {
+            if (index >= list.size) return
+
+            val achievement = list[index]
+
+            showAchievementDialog(this, achievement.title) {
+                index++
+                showNext()
+            }
+        }
+
+        showNext()
+    }
+
+    fun showAchievementDialog(
+        context: Context,
+        achievementName: String,
+        onDismiss: () -> Unit
+    ) {
+        val dialog = Dialog(context)
+        dialog.setContentView(R.layout.dialog_achievement_unlocked)
+
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.attributes?.dimAmount = 0.8f
+
+        dialog.show()
+
+        val root = dialog.findViewById<View>(R.id.rootLayout)
+        val title = dialog.findViewById<TextView>(R.id.title)
+        val subtitle = dialog.findViewById<TextView>(R.id.subtitle)
+
+        title.text = achievementName
+        subtitle.text = "Great job! Keep going 🚀"
+
+        root.animate()
+            .scaleX(1f)
+            .scaleY(1f)
+            .alpha(1f)
+            .setDuration(350)
+            .setInterpolator(OvershootInterpolator())
+            .start()
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            dialog.dismiss()
+            onDismiss()   // 🔥 IMPORTANT
+        }, 2500)
     }
 
     private fun observeUserProfile() {

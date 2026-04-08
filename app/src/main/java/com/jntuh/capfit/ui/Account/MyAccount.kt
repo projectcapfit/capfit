@@ -2,6 +2,7 @@ package com.jntuh.capfit.ui.Account
 
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import androidx.activity.enableEdgeToEdge
@@ -9,6 +10,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
@@ -29,19 +31,19 @@ class MyAccount : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        window.statusBarColor = Color.TRANSPARENT
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
+        window.decorView.systemUiVisibility =
+            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
 
         binding = ActivityMyAccountBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, _ ->
-            WindowInsetsCompat.CONSUMED
-        }
-
         loadUserDetails()
 
         binding.apply {
-            backButton.setOnClickListener {
+            btnBack.setOnClickListener {
                 startActivity(Intent(this@MyAccount, HomePage::class.java))
                 finish()
             }

@@ -16,8 +16,6 @@
 
     <color name="green">#4CAF50</color>
 
-    <color name="ach_primary">#A7E6A3</color>
-    <color name="ach_primary_light">#C9F7C5</color>
 
     <color name="ach_bg_light">#F6F8F6</color>
     <color name="ach_bg_dark">#141F13</color>
@@ -28,7 +26,6 @@
     <color name="ach_text_sub_light">#6C6C6C</color>
     <color name="ach_text_sub_dark">#B6B6B6</color>
 
-    <color name="ach_locked_bg_light">#E0E0E0</color>
     <color name="ach_locked_bg_dark">#2E2E2E</color>
 
     <color name="add_friend_background">#E8F5E9</color>
@@ -46,4 +43,27 @@
     <color name="white">#FFFFFF</color>
     <color name="gray_text">#B0B0C3</color>
     <color name="divider">#2A2A3C</color>
+
+    <color name="ach_primary">#4CAF50</color>
+    <color name="ach_primary_dark">#2E7D32</color>
+    <color name="ach_primary_light">#E8F5E9</color>
+
+    <color name="ach_locked_bg_light">#F1F3F4</color>
+    <color name="ach_locked_dark">#9AA0A6</color>
+    <color name="ach_locked_icon">#BDC1C6</color>
+
+
+<!--    <color name="ach_card_unlocked">#A5D6A7</color>-->
+<!--    <color name="ach_circle_unlocked">#81C784</color>-->
+<!--    <color name="ach_text_unlocked">#2E7D32</color>-->
+<!--    <color name="ach_card_unlocked">#B6E04A</color>   &lt;!&ndash; lighter &ndash;&gt;-->
+<!--    <color name="ach_circle_unlocked">#9FCC2A</color> &lt;!&ndash; maintains depth &ndash;&gt;-->
+    <color name="ach_text_unlocked">#2A3608</color>
+    <color name="ach_card_unlocked">#D2E57A</color>
+    <color name="ach_circle_unlocked">#B0C929</color>
+
+
+    <color name="ach_card_locked">#E0E0E0</color>
+    <color name="ach_circle_locked">#CFD8DC</color>
+    <color name="ach_text_locked">#9E9E9E</color>
 </resources>

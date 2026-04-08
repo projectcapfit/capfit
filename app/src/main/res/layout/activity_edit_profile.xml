@@ -7,15 +7,58 @@
         android:id="@+id/main"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:fitsSystemWindows="true"
         android:background="@color/my_white"
         tools:context=".ui.Account.EditProfile">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/layout_header"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageButton
+                android:id="@+id/backButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_back"
+                app:tint="#111111"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/titleEdit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="EDIT PROFILE"
+                android:textColor="#111111"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05"
+                android:fontFamily="sans-serif-medium"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <View
+            android:id="@+id/header_divider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#EEEEEE"
+            app:layout_constraintTop_toBottomOf="@id/layout_header" />
 
         <ScrollView
             android:id="@+id/scrollView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="0dp"
             android:fillViewport="true"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/header_divider"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
@@ -28,30 +71,6 @@
                 android:paddingTop="24dp"
                 android:paddingBottom="32dp">
 
-                <ImageView
-                    android:id="@+id/backButton"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_back"
-                    android:padding="4dp"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintStart_toStartOf="parent" />
-
-                <TextView
-                    android:id="@+id/titleEdit"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="EDIT PROFILE"
-                    android:textSize="20sp"
-                    android:textColor="@color/black"
-                    android:textStyle="bold"
-                    android:layout_marginTop="4dp"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintBottom_toTopOf="@id/labelFullName" />
-
-                <!-- FULL NAME LABEL -->
                 <TextView
                     android:id="@+id/labelFullName"
                     android:layout_width="0dp"
@@ -59,12 +78,11 @@
                     android:text="Full Name"
                     android:textSize="14sp"
                     android:textColor="@color/black"
-                    android:layout_marginTop="32dp"
-                    app:layout_constraintTop_toBottomOf="@id/titleEdit"
+                    android:layout_marginTop="8dp"
+                    app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent" />
 
-                <!-- FULL NAME INPUT -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/fullNameLayout"
                     android:layout_width="0dp"
@@ -96,7 +114,6 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent" />
 
-                <!-- PHONE INPUT -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/phoneLayout"
                     android:layout_width="0dp"
@@ -133,7 +150,6 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:background="@drawable/round_edit_text_box"
-
                     android:padding="8dp"
                     android:layout_marginTop="6dp"
                     app:layout_constraintTop_toBottomOf="@id/labelWeight"
@@ -167,18 +183,18 @@
                         app:layout_constraintBottom_toBottomOf="parent">
 
                         <TextView
+                            android:id="@+id/tvLbs"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:id="@+id/tvLbs"
                             android:text="LBS"
                             android:padding="8dp"
                             android:textColor="@color/black"
                             android:textSize="14sp" />
 
                         <TextView
+                            android:id="@+id/tvKg"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:id="@+id/tvKg"
                             android:text="KG"
                             android:padding="8dp"
                             android:textColor="@color/black"
@@ -198,7 +214,6 @@
                     app:layout_constraintTop_toBottomOf="@id/weightContainer"
                     app:layout_constraintStart_toStartOf="parent" />
 
-                <!-- HEIGHT INPUT + TOGGLE -->
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:id="@+id/heightContainer"
                     android:layout_width="0dp"
@@ -237,18 +252,18 @@
                         app:layout_constraintBottom_toBottomOf="parent">
 
                         <TextView
+                            android:id="@+id/tvFeet"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:id="@+id/tvFeet"
                             android:text="ft"
                             android:padding="8dp"
                             android:textColor="@color/black"
                             android:textSize="14sp" />
 
                         <TextView
+                            android:id="@+id/tvCm"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:id="@+id/tvCm"
                             android:text="cm"
                             android:padding="8dp"
                             android:textColor="@color/black"
@@ -267,6 +282,7 @@
                     android:layout_marginTop="24dp"
                     app:layout_constraintTop_toBottomOf="@id/heightContainer"
                     app:layout_constraintStart_toStartOf="parent" />
+
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:id="@+id/genderDropdown"
                     android:layout_width="0dp"
@@ -286,8 +302,6 @@
                         android:textSize="16sp"
                         android:textColor="@color/black"
                         android:padding="4dp"
-                        android:clickable="true"
-                        android:focusable="true"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintEnd_toStartOf="@id/genderIcon"
                         app:layout_constraintTop_toTopOf="parent"
@@ -299,8 +313,6 @@
                         android:layout_height="24dp"
                         android:src="@drawable/ic_down_arrow"
                         android:padding="4dp"
-                        android:clickable="true"
-                        android:focusable="true"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent" />
